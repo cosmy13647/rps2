@@ -1,76 +1,154 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import LandingPage from "./pages/LandingPage";
-import LoginPage   from "./pages/LoginPage";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { login } from "../api/authApi";
 
-// ── Auth guard — checks localStorage token ────────────────
-function PrivateRoute({ children }) {
-  const token = localStorage.getItem("token");
-  if (!token) return <Navigate to="/login" replace />;
-  return children;
-}
+export default function LoginPage() {
+  const navigate = useNavigate();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [showPass, setShowPass] = useState(false);
 
-// ── Public route — redirect logged-in users away from login/landing
-function PublicRoute({ children }) {
-  const token = localStorage.getItem("token");
-  if (token) return <Navigate to="/dashboard" replace />;
-  return children;
-}
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const res = await login(username, password);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid username or password");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
+    <div className="min-h-screen bg-gray-950 flex">
 
-        {/* Landing — redirect to dashboard if already logged in */}
-        <Route
-          path="/"
-          element={
-            <PublicRoute>
-              <LandingPage />
-            </PublicRoute>
-          }
-        />
+      {/* Left panel — branding */}
+      <div className="hidden lg:flex flex-col justify-between w-1/2 bg-gray-900 border-r border-gray-800 p-12">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🍴</span>
+          <span className="font-black text-xl tracking-tight text-white">
+            Resto<span className="text-orange-500">POS</span>
+          </span>
+        </div>
 
-        {/* Login */}
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <LoginPage />
-            </PublicRoute>
-          }
-        />
+        <div>
+          <div className="text-5xl mb-8">🍽️</div>
+          <h2 className="text-4xl font-black text-white leading-tight mb-4">
+            Your restaurant,<br />
+            <span className="text-orange-500">fully in control.</span>
+          </h2>
+          <p className="text-gray-400 text-lg leading-relaxed max-w-sm">
+            Real-time orders, table management, and receipts — all from one fast login.
+          </p>
+        </div>
 
-        {/* Dashboard — placeholder until you build it */}
-        <Route
-          path="/dashboard"
-          element={
-            <PrivateRoute>
-              <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-5xl mb-4">🍽️</div>
-                  <h1 className="text-2xl font-black mb-2">Dashboard coming soon</h1>
-                  <p className="text-gray-500 mb-6">You're logged in successfully.</p>
-                  <button
-                    onClick={() => {
-                      localStorage.removeItem("token");
-                      localStorage.removeItem("user");
-                      window.location.href = "/login";
-                    }}
-                    className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 px-6 py-2 rounded-lg text-sm font-semibold transition-colors"
-                  >
-                    Sign Out
-                  </button>
-                </div>
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            { icon: "📋", label: "Orders" },
+            { icon: "🧾", label: "Receipts" },
+            { icon: "📊", label: "Revenue" },
+          ].map((item) => (
+            <div key={item.label} className="bg-gray-800 rounded-xl p-4 text-center">
+              <div className="text-2xl mb-1">{item.icon}</div>
+              <div className="text-gray-400 text-xs font-medium">{item.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Right panel — form */}
+      <div className="flex-1 flex flex-col justify-center items-center px-6">
+
+        {/* Mobile logo */}
+        <div className="lg:hidden flex items-center gap-2 mb-10">
+          <span className="text-2xl">🍴</span>
+          <span className="font-black text-xl text-white">
+            Resto<span className="text-orange-500">POS</span>
+          </span>
+        </div>
+
+        <div className="w-full max-w-sm">
+          <div className="mb-8">
+            <h1 className="text-3xl font-black text-white mb-2">Welcome back</h1>
+            <p className="text-gray-500">Sign in to your staff account</p>
+          </div>
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl mb-6 flex items-center gap-2">
+              <span>⚠️</span> {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Username
+              </label>
+              <input
+                type="text"
+                placeholder="Enter your username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                autoFocus
+                className="w-full bg-gray-900 border border-gray-700 text-white placeholder-gray-600 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPass ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full bg-gray-900 border border-gray-700 text-white placeholder-gray-600 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 text-sm transition-colors"
+                >
+                  {showPass ? "Hide" : "Show"}
+                </button>
               </div>
-            </PrivateRoute>
-          }
-        />
+            </div>
 
-        {/* Catch-all */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-all hover:scale-[1.02] active:scale-100 mt-2"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Signing in...
+                </span>
+              ) : (
+                "Sign In →"
+              )}
+            </button>
+          </form>
 
-      </Routes>
-    </BrowserRouter>
+          <button
+            onClick={() => navigate("/")}
+            className="mt-8 w-full text-center text-gray-600 hover:text-gray-400 text-sm transition-colors"
+          >
+            ← Back to home
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
