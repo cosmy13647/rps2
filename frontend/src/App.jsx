@@ -1,12 +1,11 @@
-import './App.css'
-import CashierPage from './pages/CashierPage'
+import LoginPage from './pages/LoginPage';
 
 function App() {
-  return (
-    <div className="App">
-      <CashierPage />
-    </div>
-  )
+    return (
+        <div>
+            <LoginPage />
+        </div>
+    );
 }
 
-export default App
+export default App;
