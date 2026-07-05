@@ -1,67 +1,69 @@
- const Order = require('../models/Order');
-const Receipt = require('../models/Receipt');
-const generateBillId = require('../utils/generateBillId');
+const pool = require('../config/db');
 const { getIO } = require('../config/socket');
 
-/**
- * @desc    Create a new order and automatically generate a receipt
- * @route   POST /api/orders
- * @access  Public
- */
 exports.createOrder = async (req, res) => {
-    try {
-        const {
-            tableNumber,
-            waiterName,
-            items,
-            subtotal
-        } = req.body;
+    const { table_number, waiter_name, items, subtotal } = req.body;
 
-        // Validation: Empty items
-        if (!items || items.length === 0) {
-            return res.status(400).json({ message: 'Order must have at least one item' });
+    if (!items || items.length === 0) {
+        return res.status(400).json({ message: 'Order must have at least one item' });
+    }
+
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // 1. Insert order
+        const orderResult = await client.query(
+            `INSERT INTO orders (table_number, waiter_name, subtotal)
+             VALUES ($1, $2, $3)
+             RETURNING *`,
+            [table_number, waiter_name, subtotal]
+        );
+        const order = orderResult.rows[0];
+
+        // 2. Insert order items
+        for (const item of items) {
+            await client.query(
+                `INSERT INTO order_items (order_id, meal_name, quantity, unit_price, line_total)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [order.id, item.meal_name, item.quantity, item.unit_price, item.line_total]
+            );
         }
 
-        // 1. Create and save the Order
-        const newOrder = new Order({
-            tableNumber,
-            waiterName,
+        // 3. Generate receipt number
+        const counterResult = await client.query(
+            `UPDATE counters SET seq = seq + 1 WHERE name = 'receipt' RETURNING seq`
+        );
+        const seq = counterResult.rows[0].seq;
+        const receipt_number = `RCP-${String(seq).padStart(3, '0')}`;
+
+        // 4. Insert receipt
+        const receiptResult = await client.query(
+            `INSERT INTO receipts (receipt_number, order_id, status)
+             VALUES ($1, $2, 'unpaid')
+             RETURNING *`,
+            [receipt_number, order.id]
+        );
+        const receipt = receiptResult.rows[0];
+console.log('Receipt result:', receiptResult.rows);
+        await client.query('COMMIT');
+
+        // 5. Emit kitchen alert
+        getIO().emit('order:created', {
+            order,
             items,
-            subtotal
+            waiter_name,
+            table_number
         });
 
-        const savedOrder = await newOrder.save();
+        res.status(201).json({ order, receipt, items });
 
-        // 2. Generate a unique billId for the Receipt
-        const billId = await generateBillId();
-
-        // 3. Create and save the Receipt linked to the Order
-        const newReceipt = new Receipt({
-            billId,
-            orderId: savedOrder._id,
-            tableNumber,
-            waiterName,
-            items,
-            subtotal,
-            status: 'unpaid',
-            printedAt: new Date()
-        });
-
-        const savedReceipt = await newReceipt.save();
-
-        // Emit Socket.io event
-        getIO().emit('receipt:created', savedReceipt);
-
-        // 4. Return both
-        res.status(201).json({
-            order: savedOrder,
-            receipt: savedReceipt
-        });
     } catch (error) {
-        console.error('Error creating order and receipt:', error);
-        res.status(500).json({
-            message: 'Failed to create order and receipt',
-            error: error.message
-        });
+        await client.query('ROLLBACK');
+        console.error('Error creating order:', error);
+        res.status(500).json({ message: 'Failed to create order', error: error.message });
+    } finally {
+        client.release();
     }
 };

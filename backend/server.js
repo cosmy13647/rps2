@@ -1,13 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const connectDB = require('./src/config/db');
 
 // Load environment variables
 dotenv.config();
 
-// Connect to Database
-connectDB();
 
 const app = express();
 const http = require('http');
@@ -23,11 +20,7 @@ init(server);
 app.use(cors());
 app.use(express.json());
 
-// Request logging for debugging
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.originalUrl}`);
-  next();
-});
+
 
 // Basic Route
 app.get('/', (req, res) => {
@@ -54,6 +47,9 @@ app.use('/api/revenue', revenueRoutes);
 const voidRequestRoutes = require('./src/routes/voidRequestRoutes');
 app.use('/api/void-requests', voidRequestRoutes);
 
+// Auth Routes
+const authRoutes = require('./src/routes/authRoutes');
+app.use('/api/auth', authRoutes);
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
