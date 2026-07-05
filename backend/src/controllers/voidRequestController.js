@@ -1,145 +1,110 @@
-const VoidRequest = require('../models/VoidRequest');
-const Receipt = require('../models/Receipt');
+const pool = require('../config/db');
 const { getIO } = require('../config/socket');
 
-/**
- * @desc    Create a new void request for a receipt
- * @route   POST /api/void-requests
- * @access  Public
- */
 exports.createVoidRequest = async (req, res) => {
     try {
-        const {
-            receiptId,
-            reason,
-            requestedBy
-        } = req.body;
+        const { receipt_id, reason } = req.body;
+        const requested_by = req.user.id;
 
-        // 1. Check if receipt is already paid
-        const receipt = await Receipt.findById(receiptId);
+        const receiptResult = await pool.query(
+            `SELECT * FROM receipts WHERE id = $1`,
+            [receipt_id]
+        );
+
+        const receipt = receiptResult.rows[0];
+
         if (!receipt) {
             return res.status(404).json({ message: 'Receipt not found' });
         }
 
-        if (receipt.status === 'paid') {
-            return res.status(400).json({ message: 'Cannot void a paid receipt' });
+        if (receipt.status === 'voided') {
+            return res.status(400).json({ message: 'Receipt is already voided' });
         }
 
-        const newVoidRequest = new VoidRequest({
-            receiptId,
-            reason,
-            requestedBy
-        });
+        const result = await pool.query(
+            `INSERT INTO void_requests (receipt_id, requested_by, reason)
+             VALUES ($1, $2, $3)
+             RETURNING *`,
+            [receipt_id, requested_by, reason]
+        );
 
-        const savedVoidRequest = await newVoidRequest.save();
+        const voidRequest = result.rows[0];
+        getIO().emit('voidRequest:created', voidRequest);
 
-        // Emit Socket.io event
-        getIO().emit('voidRequest:created', savedVoidRequest);
+        res.status(201).json({ message: 'Void request submitted', voidRequest });
 
-        res.status(201).json(savedVoidRequest);
     } catch (error) {
         console.error('Error creating void request:', error);
-        res.status(500).json({
-            message: 'Failed to create void request',
-            error: error.message
-        });
+        res.status(500).json({ message: 'Failed to create void request', error: error.message });
     }
 };
 
-/**
- * @desc    Approve a void request and update the linked receipt
- * @route   PATCH /api/void-requests/:id/approve
- * @access  Public
- */
 exports.approveVoidRequest = async (req, res) => {
+    const { id } = req.params;
+    const approved_by = req.user.id;
+    const client = await pool.connect();
+
     try {
-        const { id } = req.params;
-        const { reviewedBy, role } = req.body;
+        await client.query('BEGIN');
 
-        // Basic role check
-        if (role !== 'manager') {
-            return res.status(403).json({ message: 'Forbidden: Only managers can approve void requests' });
-        }
-
-        // 1. Update VoidRequest status
-        const voidRequest = await VoidRequest.findByIdAndUpdate(
-            id,
-            {
-                status: 'approved',
-                reviewedBy,
-                reviewedAt: new Date()
-            },
-            { new: true }
+        const voidResult = await client.query(
+            `UPDATE void_requests 
+             SET status = 'approved', approved_by = $1, approved_at = NOW()
+             WHERE id = $2
+             RETURNING *`,
+            [approved_by, id]
         );
+
+        const voidRequest = voidResult.rows[0];
 
         if (!voidRequest) {
             return res.status(404).json({ message: 'Void request not found' });
         }
 
-        // 2. Update the linked Receipt
-        const receipt = await Receipt.findByIdAndUpdate(
-            voidRequest.receiptId,
-            {
-                status: 'voided',
-                voidReason: voidRequest.reason
-            },
-            { new: true }
+        await client.query(
+            `UPDATE receipts SET status = 'voided'
+             WHERE id = $1`,
+            [voidRequest.receipt_id]
         );
 
-        res.json({
-            voidRequest,
-            receipt
-        });
+        await client.query('COMMIT');
 
-        // Emit Socket.io event
-        getIO().emit('voidRequest:updated', voidRequest);
+        getIO().emit('voidRequest:approved', voidRequest);
+        res.json({ message: 'Void request approved', voidRequest });
+
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('Error approving void request:', error);
-        res.status(500).json({
-            message: 'Failed to approve void request',
-            error: error.message
-        });
+        res.status(500).json({ message: 'Failed to approve void request', error: error.message });
+    } finally {
+        client.release();
     }
 };
 
-/**
- * @desc    Reject a void request
- * @route   PATCH /api/void-requests/:id/reject
- * @access  Public
- */
 exports.rejectVoidRequest = async (req, res) => {
+    const { id } = req.params;
+    const approved_by = req.user.id;
+
     try {
-        const { id } = req.params;
-        const { reviewedBy, role } = req.body;
-
-        // Basic role check
-        if (role !== 'manager') {
-            return res.status(403).json({ message: 'Forbidden: Only managers can reject void requests' });
-        }
-
-        const voidRequest = await VoidRequest.findByIdAndUpdate(
-            id,
-            {
-                status: 'rejected',
-                reviewedBy,
-                reviewedAt: new Date()
-            },
-            { new: true }
+        const result = await pool.query(
+            `UPDATE void_requests
+             SET status = 'rejected', approved_by = $1, approved_at = NOW()
+             WHERE id = $2
+             RETURNING *`,
+            [approved_by, id]
         );
+
+        const voidRequest = result.rows[0];
 
         if (!voidRequest) {
             return res.status(404).json({ message: 'Void request not found' });
         }
 
-        res.json({ voidRequest });
+        getIO().emit('voidRequest:rejected', voidRequest);
+        res.json({ message: 'Void request rejected', voidRequest });
 
-        // Emit Socket.io event
-        getIO().emit('voidRequest:updated', voidRequest);
     } catch (error) {
         console.error('Error rejecting void request:', error);
-        res.status(500).json({
-            message: 'Failed to reject void request',
-            error: error.message
-        });
+        res.status(500).json({ message: 'Failed to reject void request', error: error.message });
     }
 };
