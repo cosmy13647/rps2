@@ -1,52 +1,76 @@
-import { useState } from 'react';
-import { login } from '../api/authApi';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import LandingPage from "./pages/LandingPage";
+import LoginPage   from "./pages/LoginPage";
 
-const LoginPage = () => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+// ── Auth guard — checks localStorage token ────────────────
+function PrivateRoute({ children }) {
+  const token = localStorage.getItem("token");
+  if (!token) return <Navigate to="/login" replace />;
+  return children;
+}
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const res = await login(username, password);
-            localStorage.setItem('token', res.data.token);
-            localStorage.setItem('user', JSON.stringify(res.data.user));
-            alert(`Welcome ${res.data.user.full_name}`);
-        } catch (err) {
-            setError('Invalid username or password');
-        }
-    };
+// ── Public route — redirect logged-in users away from login/landing
+function PublicRoute({ children }) {
+  const token = localStorage.getItem("token");
+  if (token) return <Navigate to="/dashboard" replace />;
+  return children;
+}
 
-    return (
-        <div style={{ maxWidth: '400px', margin: '100px auto', padding: '20px' }}>
-            <h2>Restaurant POS — Login</h2>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: '10px' }}>
-                    <input
-                        type="text"
-                        placeholder="Username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        style={{ width: '100%', padding: '8px' }}
-                    />
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+
+        {/* Landing — redirect to dashboard if already logged in */}
+        <Route
+          path="/"
+          element={
+            <PublicRoute>
+              <LandingPage />
+            </PublicRoute>
+          }
+        />
+
+        {/* Login */}
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <LoginPage />
+            </PublicRoute>
+          }
+        />
+
+        {/* Dashboard — placeholder until you build it */}
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-5xl mb-4">🍽️</div>
+                  <h1 className="text-2xl font-black mb-2">Dashboard coming soon</h1>
+                  <p className="text-gray-500 mb-6">You're logged in successfully.</p>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem("token");
+                      localStorage.removeItem("user");
+                      window.location.href = "/login";
+                    }}
+                    className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 px-6 py-2 rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    Sign Out
+                  </button>
                 </div>
-                <div style={{ marginBottom: '10px' }}>
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        style={{ width: '100%', padding: '8px' }}
-                    />
-                </div>
-                <button type="submit" style={{ width: '100%', padding: '10px' }}>
-                    Login
-                </button>
-            </form>
-        </div>
-    );
-};
+              </div>
+            </PrivateRoute>
+          }
+        />
 
-export default LoginPage;
+        {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+
+      </Routes>
+    </BrowserRouter>
+  );
+}
