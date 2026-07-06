@@ -35,3 +35,23 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+@media print {
+
+    body * {
+        visibility: hidden;
+    }
+
+    #print-receipt,
+    #print-receipt * {
+        visibility: visible;
+    }
+
+    #print-receipt {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 72mm;
+        background: white;
+    }
+
+}

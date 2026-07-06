@@ -20,7 +20,13 @@ const [printData, setPrintData] = useState(null);
     useEffect(() => {
         fetchReceipts();
     }, []);
-
+useEffect(() => {
+    if (printData) {
+        setTimeout(() => {
+            window.print();
+        }, 100);
+    }
+}, [printData]);
     const fetchReceipts = async () => {
         try {
             const res = await getUnpaidReceipts();
@@ -52,7 +58,7 @@ const [printData, setPrintData] = useState(null);
     const handleCreateOrder = async () => {
         setLoading(true);
         try {
-            await createOrder({ table_number: tableNumber, waiter_name: waiterName, items, subtotal });
+            
             setTableNumber('');
             setWaiterName('');
             setItems([{ meal_name: '', quantity: 1, unit_price: '', line_total: 0 }]);
@@ -60,8 +66,8 @@ const [printData, setPrintData] = useState(null);
             const res = await createOrder({ table_number: tableNumber, waiter_name: waiterName, items, subtotal });
 setPrintData({ ...res.data.receipt, items, waiter_name: waiterName, table_number: tableNumber });
 fetchReceipts();
-window.print();
-            window.print();
+
+            
         } catch (err) {
             console.error('Failed to create order', err);
         }
