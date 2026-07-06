@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createOrder } from '../api/orderApi';
 import { getUnpaidReceipts, payReceipt } from '../api/receiptApi';
-
+import PrintReceipt from '../components/PrintReceipt';
 export default function CashierPage() {
     const user = JSON.parse(localStorage.getItem('user'));
 
@@ -16,7 +16,7 @@ export default function CashierPage() {
     const [paymentMethod, setPaymentMethod] = useState('');
     const [amountPaid, setAmountPaid] = useState('');
     const [loading, setLoading] = useState(false);
-
+const [printData, setPrintData] = useState(null);
     useEffect(() => {
         fetchReceipts();
     }, []);
@@ -57,6 +57,10 @@ export default function CashierPage() {
             setWaiterName('');
             setItems([{ meal_name: '', quantity: 1, unit_price: '', line_total: 0 }]);
             fetchReceipts();
+            const res = await createOrder({ table_number: tableNumber, waiter_name: waiterName, items, subtotal });
+setPrintData({ ...res.data.receipt, items, waiter_name: waiterName, table_number: tableNumber });
+fetchReceipts();
+window.print();
             window.print();
         } catch (err) {
             console.error('Failed to create order', err);
@@ -276,6 +280,8 @@ export default function CashierPage() {
                     </div>
                 </div>
             )}
+            {printData && <PrintReceipt receipt={printData} />}
         </div>
+        
     );
 }
