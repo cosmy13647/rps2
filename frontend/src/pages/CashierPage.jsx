@@ -86,6 +86,7 @@ window.print();
     };
 
     return (
+        <>
         <div className="min-h-screen bg-gray-950 text-white">
             {/* Header */}
             <nav className="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
@@ -280,8 +281,9 @@ window.print();
                     </div>
                 </div>
             )}
-            {printData && <PrintReceipt receipt={printData} />}
+           
         </div>
-        
+         {printData && <PrintReceipt receipt={printData} />}
+         </>
     );
 }
