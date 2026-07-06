@@ -65,10 +65,18 @@ exports.payReceipt = async (req, res) => {
 exports.getReceipts = async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT r.*, o.table_number, o.waiter_name, o.subtotal
+            `SELECT r.*, o.table_number, o.waiter_name, o.subtotal,
+             json_agg(json_build_object(
+                'meal_name', oi.meal_name,
+                'quantity', oi.quantity,
+                'unit_price', oi.unit_price,
+                'line_total', oi.line_total
+             )) as items
              FROM receipts r
              JOIN orders o ON r.order_id = o.id
+             JOIN order_items oi ON oi.order_id = o.id
              WHERE r.status = 'unpaid'
+             GROUP BY r.id, o.table_number, o.waiter_name, o.subtotal
              ORDER BY r.created_at DESC`
         );
         res.json(result.rows);
