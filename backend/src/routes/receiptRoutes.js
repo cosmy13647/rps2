@@ -4,11 +4,11 @@ const receiptController = require('../controllers/receiptController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 /**
- * @route   POST /api/receipts
- * @desc    Create a new receipt
- * @access  Public
+ * @route   GET /api/receipts
+ * @desc    Get all unpaid receipts
+ * @access  Protected
  */
 router.patch('/:id/pay', protect, authorize('admin', 'manager','cashier'), receiptController.payReceipt);
-
+router.get('/', protect, authorize('cashier', 'manager', 'admin'), receiptController.getReceipts);
 
 module.exports = router;

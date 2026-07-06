@@ -62,3 +62,18 @@ exports.payReceipt = async (req, res) => {
         client.release();
     }
 };  
+exports.getReceipts = async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT r.*, o.table_number, o.waiter_name, o.subtotal
+             FROM receipts r
+             JOIN orders o ON r.order_id = o.id
+             WHERE r.status = 'unpaid'
+             ORDER BY r.created_at DESC`
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching receipts:', error);
+        res.status(500).json({ message: 'Failed to fetch receipts' });
+    }
+};
