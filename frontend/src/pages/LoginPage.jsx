@@ -18,7 +18,9 @@ export default function LoginPage() {
       const res = await login(username, password);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
-      navigate("/dashboard");
+      const { role } = res.data.user;
+if (role === 'waiter') navigate('/waiter');
+else navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || "Invalid username or password");
     } finally {

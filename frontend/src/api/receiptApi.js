@@ -7,3 +7,6 @@ export const getUnpaidReceipts = () => {
 export const payReceipt = (id, data) => {
     return api.patch(`/api/receipts/${id}/pay`, data);
 };
+export const getReceiptsByWaiter = (name) => {
+    return api.get(`/api/receipts/waiter/${name}`);
+};

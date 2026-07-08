@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import LoginPage   from "./pages/LoginPage";
 import CashierPage from './pages/CashierPage';
+import WaiterPage from './pages/WaiterPage';
 // ── Auth guard — checks localStorage token ────────────────
 function PrivateRoute({ children }) {
   const token = localStorage.getItem("token");
@@ -70,6 +71,7 @@ export default function App() {
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
 <Route path="/dashboard" element={<PrivateRoute><CashierPage /></PrivateRoute>} />
+<Route path="/waiter" element={<PrivateRoute><WaiterPage /></PrivateRoute>} />
       </Routes>
     </BrowserRouter>
   );
