@@ -46,7 +46,8 @@ exports.createOrder = async (req, res) => {
             [receipt_number, order.id]
         );
         const receipt = receiptResult.rows[0];
-console.log('Receipt result:', receiptResult.rows);
+        console.log('Receipt result:', receiptResult.rows);
+
         await client.query('COMMIT');
 
         // 5. Emit kitchen alert
@@ -67,6 +68,9 @@ console.log('Receipt result:', receiptResult.rows);
         client.release();
     }
 };
+
+// GET /api/orders/pending
+// Returns all orders the kitchen hasn't finished, with their items attached.
 exports.getPendingOrders = async (req, res) => {
     try {
         const result = await pool.query(
@@ -85,44 +89,48 @@ exports.getPendingOrders = async (req, res) => {
                 ) AS items
              FROM orders o
              LEFT JOIN order_items oi ON oi.order_id = o.id
-             WHERE o.status != 'done'
+             WHERE o.status = 'pending'
              GROUP BY o.id
              ORDER BY o.created_at ASC`
         );
- 
+
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching pending orders:', error);
         res.status(500).json({ message: 'Failed to fetch pending orders', error: error.message });
     }
 };
- 
+
 // PATCH /api/orders/:id/status
-// Body: { status: 'pending' | 'preparing' | 'done' }
+// Body: { status: 'pending' | 'completed' | 'cancelled' }
+// NOTE: these are the values enforced by the existing orders_status_check
+// constraint already in the database — confirmed via:
+//   SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint
+//   WHERE conname = 'orders_status_check';
 exports.updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
- 
-    const allowedStatuses = ['pending', 'preparing', 'done'];
+
+    const allowedStatuses = ['pending', 'completed', 'cancelled'];
     if (!allowedStatuses.includes(status)) {
         return res.status(400).json({ message: 'Invalid status value' });
     }
- 
+
     try {
         const result = await pool.query(
             `UPDATE orders SET status = $1 WHERE id = $2 RETURNING *`,
             [status, id]
         );
- 
+
         if (result.rows.length === 0) {
             return res.status(404).json({ message: 'Order not found' });
         }
- 
+
         const order = result.rows[0];
- 
+
         // Let any other open kitchen screens stay in sync in real time
         getIO().emit('order:updated', order);
- 
+
         res.json(order);
     } catch (error) {
         console.error('Error updating order status:', error);
