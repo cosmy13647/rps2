@@ -2,11 +2,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { getPendingOrders, updateOrderStatus } from '../api/orderApi';
 
-// TODO: point this at wherever your server's Socket.IO is running.
-// If your frontend and backend are on the same origin in production, you can
-// often just use io() with no URL. In dev (separate ports) you likely need
-// the explicit backend origin, e.g. 'http://localhost:5000'.
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+// Reuses the same env var your api.js already uses for the axios baseURL —
+// since Socket.IO runs on the same Render server as your API, no new
+// environment variable needs to be added on Vercel.
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default function KitchenPage() {
     const [orders, setOrders] = useState([]);
