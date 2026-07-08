@@ -67,3 +67,65 @@ console.log('Receipt result:', receiptResult.rows);
         client.release();
     }
 };
+exports.getPendingOrders = async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT
+                o.id,
+                o.table_number,
+                o.waiter_name,
+                o.subtotal,
+                o.status,
+                o.created_at,
+                COALESCE(
+                    json_agg(
+                        json_build_object('meal_name', oi.meal_name, 'quantity', oi.quantity)
+                    ) FILTER (WHERE oi.id IS NOT NULL),
+                    '[]'
+                ) AS items
+             FROM orders o
+             LEFT JOIN order_items oi ON oi.order_id = o.id
+             WHERE o.status != 'done'
+             GROUP BY o.id
+             ORDER BY o.created_at ASC`
+        );
+ 
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching pending orders:', error);
+        res.status(500).json({ message: 'Failed to fetch pending orders', error: error.message });
+    }
+};
+ 
+// PATCH /api/orders/:id/status
+// Body: { status: 'pending' | 'preparing' | 'done' }
+exports.updateOrderStatus = async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+ 
+    const allowedStatuses = ['pending', 'preparing', 'done'];
+    if (!allowedStatuses.includes(status)) {
+        return res.status(400).json({ message: 'Invalid status value' });
+    }
+ 
+    try {
+        const result = await pool.query(
+            `UPDATE orders SET status = $1 WHERE id = $2 RETURNING *`,
+            [status, id]
+        );
+ 
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+ 
+        const order = result.rows[0];
+ 
+        // Let any other open kitchen screens stay in sync in real time
+        getIO().emit('order:updated', order);
+ 
+        res.json(order);
+    } catch (error) {
+        console.error('Error updating order status:', error);
+        res.status(500).json({ message: 'Failed to update order status', error: error.message });
+    }
+};
