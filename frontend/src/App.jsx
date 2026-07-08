@@ -3,6 +3,7 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage   from "./pages/LoginPage";
 import CashierPage from './pages/CashierPage';
 import WaiterPage from './pages/WaiterPage';
+import KitchenPage from './pages/KitchenPage';
 // ── Auth guard — checks localStorage token ────────────────
 function PrivateRoute({ children }) {
   const token = localStorage.getItem("token");
@@ -72,6 +73,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
 <Route path="/dashboard" element={<PrivateRoute><CashierPage /></PrivateRoute>} />
 <Route path="/waiter" element={<PrivateRoute><WaiterPage /></PrivateRoute>} />
+<Route path="/kitchen" element={<PrivateRoute><KitchenPage /></PrivateRoute>} />
       </Routes>
     </BrowserRouter>
   );
