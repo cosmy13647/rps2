@@ -99,7 +99,7 @@ export default function KitchenPage() {
 
         // Server emits the updated order row whenever status changes (from any screen)
         socket.on('order:updated', (updatedOrder) => {
-            if (updatedOrder.status === 'done') {
+            if (updatedOrder.status === 'completed' || updatedOrder.status === 'cancelled') {
                 setOrders((prev) => prev.filter((o) => o.id !== updatedOrder.id));
                 setNewOrderIds((prev) => {
                     const next = new Set(prev);
@@ -136,7 +136,7 @@ export default function KitchenPage() {
     const markDone = async (orderId) => {
         acknowledgeOrder(orderId);
         try {
-            await updateOrderStatus(orderId, 'done');
+            await updateOrderStatus(orderId, 'completed');
             setOrders((prev) => prev.filter((o) => o.id !== orderId));
         } catch (err) {
             console.error('Failed to update order status', err);
