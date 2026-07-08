@@ -10,5 +10,5 @@ const { protect, authorize } = require('../middleware/authMiddleware');
  */
 router.post('/login', authController.login);
 router.post('/register', protect, authorize('admin', 'manager'), authController.createUser);
-
+router.get('/waiters', protect, authorize('admin', 'manager','waiter'), authController.getWaiters);
 module.exports = router;

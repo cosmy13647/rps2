@@ -83,3 +83,19 @@ exports.createUser = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+exports.getWaiters = async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, username FROM users WHERE role = $1 ORDER BY username ASC',
+      ['waiter']
+    );
+
+    return res.status(200).json(rows);
+  } catch (error) {
+    console.error('Failed to fetch waiters:', error);
+
+    return res.status(500).json({
+      message: 'Failed to fetch waiters. Please try again later.',
+    });
+  }
+};
