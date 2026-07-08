@@ -85,3 +85,27 @@ exports.getReceipts = async (req, res) => {
         res.status(500).json({ message: 'Failed to fetch receipts' });
     }
 };
+exports.getReceiptsByWaiter = async (req, res) => {
+    try {
+        const { name } = req.params;
+        const result = await pool.query(
+            `SELECT r.*, o.table_number, o.waiter_name, o.subtotal,
+             json_agg(json_build_object(
+                'meal_name', oi.meal_name,
+                'quantity', oi.quantity,
+                'unit_price', oi.unit_price,
+                'line_total', oi.line_total
+             )) as items
+             FROM receipts r
+             JOIN orders o ON r.order_id = o.id
+             JOIN order_items oi ON oi.order_id = o.id
+             WHERE o.waiter_name = $1 AND r.status = 'unpaid'
+             GROUP BY r.id, o.table_number, o.waiter_name, o.subtotal
+             ORDER BY r.created_at DESC`,
+            [name]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch receipts' });
+    }
+};

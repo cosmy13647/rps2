@@ -10,5 +10,5 @@ const { protect, authorize } = require('../middleware/authMiddleware');
  */
 router.patch('/:id/pay', protect, authorize('admin', 'manager','cashier'), receiptController.payReceipt);
 router.get('/', protect, authorize('cashier', 'manager', 'admin'), receiptController.getReceipts);
-
+router.get('/waiter/:name', protect, receiptController.getReceiptsByWaiter);
 module.exports = router;
