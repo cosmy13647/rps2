@@ -8,5 +8,5 @@ const{protect , authorize} = require('../middleware/authMiddleware');
  * @desc    Create a new order and receipt
  * @access  Public
  */
-router.post('/', protect, authorize('admin', 'manager','cashier'), orderController.createOrder);
+router.post('/', protect, authorize('cashier', 'manager', 'admin', 'waiter'), orderController.createOrder);
 module.exports = router;
