@@ -47,6 +47,10 @@ app.use('/api/revenue', revenueRoutes);
 const voidRequestRoutes = require('./src/routes/voidRequestRoutes');
 app.use('/api/void-requests', voidRequestRoutes);
 
+// Menu Routes
+const menuRoutes = require('./src/routes/menuRoutes');
+app.use('/api/menu', menuRoutes);
+
 // Auth Routes
 const authRoutes = require('./src/routes/authRoutes');
 app.use('/api/auth', authRoutes);
