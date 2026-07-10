@@ -11,8 +11,8 @@ const{protect , authorize} = require('../middleware/authMiddleware');
 router.post('/', protect, authorize('cashier', 'manager', 'admin', 'waiter'), orderController.createOrder);
 
 
-router.get('/pending', orderController.getPendingOrders);
-router.patch('/:id/status', orderController.updateOrderStatus);
+router.get('/pending', protect, orderController.getPendingOrders);
+router.patch('/:id/status', protect, authorize('kitchen', 'manager', 'admin'), orderController.updateOrderStatus);
  
 
 module.exports = router;
