@@ -50,6 +50,10 @@ app.use('/api/void-requests', voidRequestRoutes);
 // Auth Routes
 const authRoutes = require('./src/routes/authRoutes');
 app.use('/api/auth', authRoutes);
+
+// Shift Routes
+const shiftRoutes = require('./src/routes/shiftRoutes');
+app.use('/api/shifts', shiftRoutes);
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
