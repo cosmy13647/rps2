@@ -5,7 +5,7 @@ import CashierPage from "./pages/CashierPage";
 import WaiterPage from "./pages/WaiterPage";
 import KitchenPage from "./pages/KitchenPage";
 import CustomerPage from "./pages/CustomerPage";
-import ordersPage from "./pages/OrdersPage";
+import OrdersPage from "./pages/OrdersPage";
 function PrivateRoute({ children }) {
   const token = localStorage.getItem("token");
 
@@ -50,7 +50,7 @@ export default function App() {
         />
 
         <Route path="/order" element={<CustomerPage />} />
-        <Route path="/orders" element={<ordersPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
 
         <Route
           path="/dashboard"
