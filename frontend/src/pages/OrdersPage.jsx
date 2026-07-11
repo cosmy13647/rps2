@@ -22,7 +22,7 @@ export default function OrdersPage() {
   const [cancelTarget, setCancelTarget] = useState(null);
 
   const loadOrders = () => {
-    api.get("/api/orders/customer", { params: { sessionId } })
+   api.get("/api/orders/customer", { params: { session_id: sessionId } })
       .then((res) => setOrders(res.data))
       .catch(() => toast.error("Couldn't load your orders"))
       .finally(() => setLoading(false));
@@ -46,7 +46,7 @@ export default function OrdersPage() {
   const handleConfirmCancel = async () => {
     if (!cancelTarget) return;
     try {
-      await api.patch(`/api/orders/customer/${cancelTarget}/cancel`, { sessionId });
+      await api.patch(`/api/orders/customer/${cancelTarget}/cancel`, { session_id: sessionId });
       setOrders((prev) => prev.map((o) => (o.id === cancelTarget ? { ...o, status: "cancelled" } : o)));
       toast.success("Order cancelled");
     } catch (err) {
