@@ -137,3 +137,100 @@ exports.updateOrderStatus = async (req, res) => {
         res.status(500).json({ message: 'Failed to update order status', error: error.message });
     }
 };
+// GET /api/menu
+exports.getMenu = async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT * FROM menu_items WHERE is_available = true ORDER BY category, name`
+        );
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch menu' });
+    }
+};
+
+// POST /api/orders/customer
+exports.createCustomerOrder = async (req, res) => {
+    const { table_number, items, subtotal, guest_session_id } = req.body;
+    if (!items || items.length === 0) return res.status(400).json({ message: 'No items' });
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const orderResult = await client.query(
+            `INSERT INTO orders (table_number, waiter_name, subtotal, guest_session_id)
+             VALUES ($1, 'Customer', $2, $3) RETURNING *`,
+            [table_number, subtotal, guest_session_id]
+        );
+        const order = orderResult.rows[0];
+
+        for (const item of items) {
+            await client.query(
+                `INSERT INTO order_items (order_id, meal_name, quantity, unit_price, line_total)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [order.id, item.meal_name, item.quantity, item.unit_price, item.line_total]
+            );
+        }
+
+        const counterResult = await client.query(
+            `UPDATE counters SET seq = seq + 1 WHERE name = 'receipt' RETURNING seq`
+        );
+        const seq = counterResult.rows[0].seq;
+        const receipt_number = `RCP-${String(seq).padStart(3, '0')}`;
+
+        await client.query(
+            `INSERT INTO receipts (receipt_number, order_id, status) VALUES ($1, $2, 'unpaid')`,
+            [receipt_number, order.id]
+        );
+
+        await client.query('COMMIT');
+
+        getIO().emit('order:created', { order, items, table_number });
+
+        res.status(201).json(order);
+    } catch (error) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ message: 'Failed to create order', error: error.message });
+    } finally {
+        client.release();
+    }
+};
+
+// GET /api/orders/customer
+exports.getCustomerOrders = async (req, res) => {
+    try {
+        const sessionId = req.query.sessionId || req.query.session_id;
+        const result = await pool.query(
+            `SELECT o.* FROM orders o WHERE o.guest_session_id = $1 ORDER BY o.created_at DESC`,
+            [sessionId]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch orders' });
+    }
+};
+
+// PATCH /api/orders/customer/:id/cancel
+exports.cancelCustomerOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+      const sessionId = req.body.sessionId || req.body.session_id;
+
+        const result = await pool.query(
+            `UPDATE orders SET status = 'cancelled' 
+             WHERE id = $1 AND guest_session_id = $2 AND status = 'pending'
+             RETURNING *`,
+            [id, sessionId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(400).json({ message: 'Order cannot be cancelled' });
+        }
+
+        getIO().emit('order:updated', result.rows[0]);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to cancel order' });
+    }
+};

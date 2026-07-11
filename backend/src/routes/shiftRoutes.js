@@ -9,4 +9,4 @@ router.post('/:id/petty-cash', protect, authorize('cashier', 'manager', 'admin')
 router.get('/:id/summary', protect, authorize('cashier', 'manager', 'admin'), shiftController.getShiftSummary);
 router.post('/:id/close', protect, authorize('cashier', 'manager', 'admin'), shiftController.closeShift);
 
-module.exports = router;
+module.exports = router; 
