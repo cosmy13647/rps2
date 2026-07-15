@@ -3,7 +3,7 @@ import { createOrder } from '../api/orderApi';
 import { getReceiptsByWaiter } from '../api/receiptApi';
 import PrintReceipt from '../components/PrintReceipt';
 import api from '../api/api';
-
+import { getSocket } from '../api/socket';
 export default function WaiterPage() {
     const [waiters, setWaiters] = useState([]);
     const [selectedWaiter, setSelectedWaiter] = useState('');
@@ -13,7 +13,8 @@ export default function WaiterPage() {
     const [printData, setPrintData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('order');
-
+const [notification, setNotification] = useState(null);
+const [orderType, setOrderType] = useState('table');
     useEffect(() => {
         fetchWaiters();
     }, []);
@@ -21,6 +22,17 @@ export default function WaiterPage() {
     useEffect(() => {
         if (selectedWaiter) fetchReceipts();
     }, [selectedWaiter]);
+
+    useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    socket.on('order:ready', (payload) => {
+        setNotification(payload);
+    });
+
+    return () => socket.off('order:ready');
+}, []);
 
     const fetchWaiters = async () => {
         try {
@@ -67,12 +79,13 @@ export default function WaiterPage() {
 
         setLoading(true);
         try {
-            const res = await createOrder({
-                table_number: tableNumber,
-                waiter_name: selectedWaiter,
-                items,
-                subtotal
-            });
+           const res = await createOrder({
+    table_number: tableNumber,
+    waiter_name: selectedWaiter,
+    items,
+    subtotal,
+    order_type: orderType
+});
 
             setPrintData({
                 ...res.data.receipt,
@@ -155,7 +168,25 @@ export default function WaiterPage() {
                 {activeTab === 'order' && (
                     <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6">
                         <h2 className="text-xl font-black mb-6">New Order</h2>
-
+<div className="mb-4">
+    <label className="text-xs text-gray-400 uppercase tracking-widest mb-1 block">Order Type</label>
+    <div className="grid grid-cols-3 gap-2">
+        {['table', 'takeaway', 'delivery'].map((type) => (
+            <button
+                key={type}
+                type="button"
+                onClick={() => setOrderType(type)}
+                className={`py-2 rounded-lg text-sm font-bold capitalize transition-colors ${
+                    orderType === type
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-gray-800 border border-gray-700 text-gray-400'
+                }`}
+            >
+                {type === 'table' ? '🍽️' : type === 'takeaway' ? '📦' : '🛵'} {type}
+            </button>
+        ))}
+    </div>
+</div>
                         <div className="mb-6">
                             <label className="text-xs text-gray-400 uppercase tracking-widest mb-1 block">Table Number</label>
                             <input
@@ -270,6 +301,26 @@ export default function WaiterPage() {
             </div>
 
             <PrintReceipt receipt={printData} />
+            {notification && (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+        <div className="bg-gray-900 border-2 border-green-500 rounded-2xl p-8 w-full max-w-sm text-center">
+            <div className="text-5xl mb-4">🍽️</div>
+            <h3 className="text-2xl font-black text-green-400 mb-2">Order Ready!</h3>
+            <p className="text-gray-300 mb-1">
+                <span className="font-bold text-white">Table {notification.table_number}</span>
+            </p>
+            <p className="text-gray-400 text-sm mb-6">
+                {notification.waiter_name} — pick up from kitchen
+            </p>
+            <button
+                onClick={() => setNotification(null)}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl transition-colors"
+            >
+                Got it ✓
+            </button>
+        </div>
+    </div>
+)}
         </div>
     );
 }

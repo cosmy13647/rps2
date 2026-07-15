@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/authApi";
-
+import { connectSocket } from '../api/socket';
 export default function LoginPage() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
@@ -18,6 +18,12 @@ export default function LoginPage() {
       const res = await login(username, password);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
+      const { role } = res.data.user;
+connectSocket(role);
+
+if (role === 'waiter') navigate('/waiter');
+else if (role === 'kitchen') navigate('/kitchen');
+else navigate('/dashboard');
       const { role } = res.data.user;
 if (role === 'waiter') navigate('/waiter');
 else navigate('/dashboard');

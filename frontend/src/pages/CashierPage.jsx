@@ -7,7 +7,7 @@ import {
     getShiftSummary,
     closeShift,
 } from '../api/shiftApi';
-
+import { getSocket } from '../api/socket';
 export default function CashierPage() {
     const user = JSON.parse(localStorage.getItem('user'));
 
@@ -31,7 +31,7 @@ export default function CashierPage() {
     const [closingCount, setClosingCount] = useState('');
     const [tipsDeclared, setTipsDeclared] = useState('');
     const [closeNotes, setCloseNotes] = useState('');
-
+const [notification, setNotification] = useState(null)
     useEffect(() => {
         loadShift();
     }, []);
@@ -39,6 +39,18 @@ export default function CashierPage() {
     useEffect(() => {
         if (shift) fetchReceipts();
     }, [shift]);
+
+
+    useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    socket.on('order:ready', (payload) => {
+        setNotification(payload);
+    });
+
+    return () => socket.off('order:ready');
+}, []);
 
     const loadShift = async () => {
         try {
@@ -495,6 +507,26 @@ export default function CashierPage() {
                     </div>
                 </div>
             )}
+            {notification && (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+        <div className="bg-gray-900 border-2 border-orange-500 rounded-2xl p-8 w-full max-w-sm text-center">
+            <div className="text-5xl mb-4">📦</div>
+            <h3 className="text-2xl font-black text-orange-400 mb-2">Order Ready!</h3>
+            <p className="text-gray-300 mb-1">
+                <span className="font-bold text-white">
+                    {notification.order_type === 'takeaway' ? 'Take Away' : 'Delivery'} order is ready
+                </span>
+            </p>
+            <p className="text-gray-400 text-sm mb-6">Coordinate with kitchen for handoff</p>
+            <button
+                onClick={() => setNotification(null)}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-3 rounded-xl transition-colors"
+            >
+                Got it ✓
+            </button>
+        </div>
+    </div>
+)}
         </div>
     );
 }
