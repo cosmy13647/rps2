@@ -118,28 +118,24 @@ exports.updateOrderStatus = async (req, res) => {
 
     try {
         const result = await pool.query(
-            `UPDATE orders SET status = $1 WHERE id = $2 RETURNING *`,
+            `UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
             [status, id]
         );
-const order = result.rows[0];
 
-getIO().emit('order:updated', order);
-
-if (order.status === 'ready') {
-    notifyOrderReady(order);
-}
-
-res.json(order);
         if (result.rows.length === 0) {
             return res.status(404).json({ message: 'Order not found' });
         }
 
         const order = result.rows[0];
 
-        // Let any other open kitchen screens stay in sync in real time
         getIO().emit('order:updated', order);
 
+        if (order.status === 'ready') {
+            notifyOrderReady(order);
+        }
+
         res.json(order);
+
     } catch (error) {
         console.error('Error updating order status:', error);
         res.status(500).json({ message: 'Failed to update order status', error: error.message });
