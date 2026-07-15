@@ -1,8 +1,8 @@
 const pool = require('../config/db');
 const { getIO } = require('../config/socket');
-
+const { getIO, notifyOrderReady } = require('../config/socket');
 exports.createOrder = async (req, res) => {
-    const { table_number, waiter_name, items, subtotal } = req.body;
+    const { table_number, waiter_name, items, subtotal, order_type } = req.body;
 
     if (!items || items.length === 0) {
         return res.status(400).json({ message: 'Order must have at least one item' });
@@ -15,11 +15,11 @@ exports.createOrder = async (req, res) => {
 
         // 1. Insert order
         const orderResult = await client.query(
-            `INSERT INTO orders (table_number, waiter_name, subtotal)
-             VALUES ($1, $2, $3)
-             RETURNING *`,
-            [table_number, waiter_name, subtotal]
-        );
+    `INSERT INTO orders (table_number, waiter_name, subtotal, order_type)
+     VALUES ($1, $2, $3, $4)
+     RETURNING *`,
+    [table_number, waiter_name, subtotal, order_type || 'table']
+);
         const order = orderResult.rows[0];
 
         // 2. Insert order items
@@ -121,7 +121,15 @@ exports.updateOrderStatus = async (req, res) => {
             `UPDATE orders SET status = $1 WHERE id = $2 RETURNING *`,
             [status, id]
         );
+const order = result.rows[0];
 
+getIO().emit('order:updated', order);
+
+if (order.status === 'ready') {
+    notifyOrderReady(order);
+}
+
+res.json(order);
         if (result.rows.length === 0) {
             return res.status(404).json({ message: 'Order not found' });
         }
