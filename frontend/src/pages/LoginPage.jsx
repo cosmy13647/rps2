@@ -24,9 +24,8 @@ connectSocket(role);
 if (role === 'waiter') navigate('/waiter');
 else if (role === 'kitchen') navigate('/kitchen');
 else navigate('/dashboard');
-      const { role } = res.data.user;
-if (role === 'waiter') navigate('/waiter');
-else navigate('/dashboard');
+
+
     } catch (err) {
       setError(err.response?.data?.message || "Invalid username or password");
     } finally {
