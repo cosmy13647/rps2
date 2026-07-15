@@ -1,5 +1,5 @@
 const pool = require('../config/db');
-const { getIO } = require('../config/socket');
+
 const { getIO, notifyOrderReady } = require('../config/socket');
 exports.createOrder = async (req, res) => {
     const { table_number, waiter_name, items, subtotal, order_type } = req.body;
