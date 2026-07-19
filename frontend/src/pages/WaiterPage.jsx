@@ -129,12 +129,13 @@ export default function WaiterPage() {
         setLoading(true);
         try {
             const res = await createOrder({
-                table_number: tableNumber,
-                waiter_name: selectedWaiter,
-                items: validItems,
-                subtotal,
-                order_type: orderType
-            });
+    table_number: orderType === 'table' ? tableNumber : null,
+    customer_ref: orderType !== 'table' ? tableNumber : null,
+    waiter_name: selectedWaiter,
+    items: validItems,
+    subtotal,
+    order_type: orderType
+});
 
             setPrintData({
                 ...res.data.receipt,
@@ -215,7 +216,9 @@ export default function WaiterPage() {
 
                         {/* Order Type */}
                         <div className="mb-4">
-                            <label className="text-xs text-gray-400 uppercase tracking-widest mb-1 block">Order Type</label>
+                            <label className="text-xs text-gray-400 uppercase tracking-widest mb-1 block">
+    {orderType === 'table' ? 'Table Number' : 'Customer Name / Phone'}
+</label>
                             <div className="grid grid-cols-3 gap-2">
                                 {['table', 'takeaway', 'delivery'].map((type) => (
                                     <button key={type} type="button" onClick={() => setOrderType(type)}
