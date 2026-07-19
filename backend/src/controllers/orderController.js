@@ -14,11 +14,13 @@ exports.createOrder = async (req, res) => {
         await client.query('BEGIN');
 
         // 1. Insert order
-        const orderResult = await client.query(
-    `INSERT INTO orders (table_number, waiter_name, subtotal, order_type)
-     VALUES ($1, $2, $3, $4)
+        const { table_number, waiter_name, items, subtotal, order_type, customer_ref } = req.body;
+
+const orderResult = await client.query(
+    `INSERT INTO orders (table_number, waiter_name, subtotal, order_type, customer_ref)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING *`,
-    [table_number, waiter_name, subtotal, order_type || 'table']
+    [table_number || null, waiter_name, subtotal, order_type || 'table', customer_ref || null]
 );
         const order = orderResult.rows[0];
 
