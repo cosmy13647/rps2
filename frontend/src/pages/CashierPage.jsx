@@ -163,7 +163,7 @@ const [notification, setNotification] = useState(null)
     if (shift === undefined) {
         return (
             <div className="min-h-screen bg-white flex items-center justify-center">
-                <div className="text-gray-400">Loading...</div>
+                <div className="text-stone-400">Loading...</div>
             </div>
         );
     }
@@ -174,10 +174,10 @@ const [notification, setNotification] = useState(null)
                 <div className="bg-white border border-orange-200 shadow-sm rounded-2xl p-8 w-full max-w-sm">
                     <div className="text-4xl mb-4 text-center">🔓</div>
                     <h2 className="text-xl font-black text-center mb-2 text-gray-900">Open Shift</h2>
-                    <p className="text-gray-500 text-sm text-center mb-6">
+                    <p className="text-stone-500 text-sm text-center mb-6">
                         Count the drawer and enter the starting float to begin.
                     </p>
-                    <label className="text-xs text-gray-500 uppercase tracking-widest mb-1 block">
+                    <label className="text-xs text-stone-500 uppercase tracking-widest mb-1 block">
                         Opening Float (KES)
                     </label>
                     <input
@@ -190,7 +190,7 @@ const [notification, setNotification] = useState(null)
                     <button
                         onClick={handleOpenShift}
                         disabled={shiftLoading}
-                        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50"
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-stone-900 font-bold py-3 rounded-xl transition-all disabled:opacity-50"
                     >
                         {shiftLoading ? 'Opening...' : 'Open Shift'}
                     </button>
@@ -206,11 +206,11 @@ const [notification, setNotification] = useState(null)
                     <span className="text-xl">🍴</span>
                     <span className="font-black text-lg text-gray-900">Resto<span className="text-orange-500">POS</span></span>
                 </div>
-                <span className="text-gray-500 text-sm">👤 {user?.full_name} · {user?.role}</span>
+                <span className="text-stone-500 text-sm">👤 {user?.full_name} · {user?.role}</span>
             </nav>
 
             <div className="bg-orange-50 border-b border-orange-200 px-6 py-3 flex items-center justify-between flex-wrap gap-3">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-stone-500">
                     Shift opened by <span className="text-gray-900 font-semibold">{shift.opened_by_name}</span>
                     {' · '}
                     Float: <span className="text-gray-900 font-semibold">KES {shift.opening_float}</span>
@@ -236,17 +236,17 @@ const [notification, setNotification] = useState(null)
                     <div className="flex items-center justify-between mb-6">
                         <div>
                             <h2 className="text-xl font-black text-gray-900">Awaiting Payment</h2>
-                            <p className="text-gray-500 text-sm mt-1">
+                            <p className="text-stone-500 text-sm mt-1">
                                 {receipts.length} receipt{receipts.length !== 1 ? 's' : ''} to confirm
                             </p>
                         </div>
-                        <button onClick={fetchReceipts} className="text-gray-500 hover:text-orange-600 text-sm">↻ Refresh</button>
+                        <button onClick={fetchReceipts} className="text-stone-500 hover:text-orange-600 text-sm">↻ Refresh</button>
                     </div>
 
                     {receipts.length === 0 ? (
-                        <div className="text-center text-gray-400 py-16">
+                        <div className="text-center text-stone-400 py-16">
                             <div className="text-5xl mb-3">✅</div>
-                            <div className="font-bold text-gray-600">All caught up — no unpaid receipts</div>
+                            <div className="font-bold text-stone-500">All caught up — no unpaid receipts</div>
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -259,11 +259,11 @@ const [notification, setNotification] = useState(null)
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <span className="font-bold text-orange-600">{r.receipt_number}</span>
-                                            <span className="text-gray-500 text-sm ml-2">Table {r.table_number}</span>
+                                            <span className="text-stone-500 text-sm ml-2">Table {r.table_number}</span>
                                         </div>
                                         <span className="font-black text-gray-900">KES {r.subtotal}</span>
                                     </div>
-                                    <div className="text-xs text-gray-500 mt-1">Waiter: {r.waiter_name}</div>
+                                    <div className="text-xs text-stone-500 mt-1">Waiter: {r.waiter_name}</div>
                                 </div>
                             ))}
                         </div>
@@ -273,9 +273,9 @@ const [notification, setNotification] = useState(null)
 
             {selectedReceipt && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-                    <div className="bg-white border border-orange-200 shadow-xl rounded-2xl p-8 w-full max-w-md">
+                    <div className="bg-white border border-orange-200 shadow-xl rounded-2xl shadow-sm p-8 w-full max-w-md">
                         <h3 className="text-xl font-black mb-2 text-gray-900">Process Payment</h3>
-                        <p className="text-gray-500 text-sm mb-6">
+                        <p className="text-stone-500 text-sm mb-6">
                             {selectedReceipt.receipt_number} · Table {selectedReceipt.table_number}
                         </p>
 
@@ -286,25 +286,25 @@ const [notification, setNotification] = useState(null)
                         <div className="grid grid-cols-2 gap-3 mb-4">
                             <button
                                 onClick={() => setPaymentMethod('cash')}
-                                className={`py-3 rounded-xl font-bold border transition-colors ${paymentMethod === 'cash' ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-300 text-gray-600 hover:border-orange-400'}`}
+                                className={`py-3 rounded-xl font-bold border transition-colors ${paymentMethod === 'cash' ? 'bg-orange-500 border-orange-500 text-stone-900' : 'border-gray-300 text-stone-500 hover:border-orange-400'}`}
                             >
                                 💵 Cash
                             </button>
                             <button
                                 onClick={() => setPaymentMethod('mpesa_till')}
-                                className={`py-3 rounded-xl font-bold border transition-colors ${paymentMethod === 'mpesa_till' ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-300 text-gray-600 hover:border-orange-400'}`}
+                                className={`py-3 rounded-xl font-bold border transition-colors ${paymentMethod === 'mpesa_till' ? 'bg-orange-500 border-orange-500 text-stone-900' : 'border-gray-300 text-stone-500 hover:border-orange-400'}`}
                             >
                                 📱 M-Pesa Till
                             </button>
                             <button
                                 onClick={() => setPaymentMethod('mpesa_paybill')}
-                                className={`py-3 rounded-xl font-bold border transition-colors ${paymentMethod === 'mpesa_paybill' ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-300 text-gray-600 hover:border-orange-400'}`}
+                                className={`py-3 rounded-xl font-bold border transition-colors ${paymentMethod === 'mpesa_paybill' ? 'bg-orange-500 border-orange-500 text-stone-900' : 'border-gray-300 text-stone-500 hover:border-orange-400'}`}
                             >
                                 🏢 Paybill
                             </button>
                             <button
                                 onClick={() => setPaymentMethod('mpesa_pochi')}
-                                className={`py-3 rounded-xl font-bold border transition-colors ${paymentMethod === 'mpesa_pochi' ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-300 text-gray-600 hover:border-orange-400'}`}
+                                className={`py-3 rounded-xl font-bold border transition-colors ${paymentMethod === 'mpesa_pochi' ? 'bg-orange-500 border-orange-500 text-stone-900' : 'border-gray-300 text-stone-500 hover:border-orange-400'}`}
                             >
                                 👛 Pochi
                             </button>
@@ -312,7 +312,7 @@ const [notification, setNotification] = useState(null)
 
                         {paymentMethod === 'cash' && (
                             <div className="mb-6">
-                                <label className="text-xs text-gray-500 uppercase tracking-widest mb-1 block">Amount Received</label>
+                                <label className="text-xs text-stone-500 uppercase tracking-widest mb-1 block">Amount Received</label>
                                 <input
                                     type="number"
                                     value={amountPaid}
@@ -330,7 +330,7 @@ const [notification, setNotification] = useState(null)
 
                         {paymentMethod === 'mpesa_paybill' && (
                             <div className="mb-6">
-                                <label className="text-xs text-gray-500 uppercase tracking-widest mb-1 block">
+                                <label className="text-xs text-stone-500 uppercase tracking-widest mb-1 block">
                                     Business/Account Number <span className="text-red-500">*</span>
                                 </label>
                                 <input
@@ -345,7 +345,7 @@ const [notification, setNotification] = useState(null)
 
                         {(paymentMethod === 'mpesa_till' || paymentMethod === 'mpesa_pochi') && (
                             <div className="mb-6">
-                                <label className="text-xs text-gray-500 uppercase tracking-widest mb-1 block">
+                                <label className="text-xs text-stone-500 uppercase tracking-widest mb-1 block">
                                     Transaction Code (optional)
                                 </label>
                                 <input
@@ -366,14 +366,14 @@ const [notification, setNotification] = useState(null)
                                     setAmountPaid('');
                                     setPaymentReference('');
                                 }}
-                                className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-600 hover:border-gray-400 font-semibold transition-colors"
+                                className="flex-1 py-3 rounded-xl border border-gray-300 text-stone-500 hover:border-gray-400 font-semibold transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handlePayment}
                                 disabled={!paymentMethod || loading}
-                                className="flex-1 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition-colors disabled:opacity-50"
+                                className="flex-1 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-stone-900 font-bold transition-colors disabled:opacity-50"
                             >
                                 {loading ? 'Processing...' : 'Confirm Payment'}
                             </button>
@@ -384,9 +384,9 @@ const [notification, setNotification] = useState(null)
 
             {showPettyCash && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-                    <div className="bg-white border border-orange-200 shadow-xl rounded-2xl p-8 w-full max-w-sm">
+                    <div className="bg-white border border-orange-200 shadow-xl rounded-2xl shadow-sm p-8 w-full max-w-sm">
                         <h3 className="text-xl font-black mb-6 text-gray-900">Log Paid-Out</h3>
-                        <label className="text-xs text-gray-500 uppercase tracking-widest mb-1 block">Amount (KES)</label>
+                        <label className="text-xs text-stone-500 uppercase tracking-widest mb-1 block">Amount (KES)</label>
                         <input
                             type="number"
                             value={pettyAmount}
@@ -394,7 +394,7 @@ const [notification, setNotification] = useState(null)
                             className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 mb-4 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
                             placeholder="e.g. 500"
                         />
-                        <label className="text-xs text-gray-500 uppercase tracking-widest mb-1 block">Reason</label>
+                        <label className="text-xs text-stone-500 uppercase tracking-widest mb-1 block">Reason</label>
                         <input
                             type="text"
                             value={pettyReason}
@@ -405,13 +405,13 @@ const [notification, setNotification] = useState(null)
                         <div className="flex gap-3">
                             <button
                                 onClick={() => { setShowPettyCash(false); setPettyAmount(''); setPettyReason(''); }}
-                                className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-600 hover:border-gray-400 font-semibold transition-colors"
+                                className="flex-1 py-3 rounded-xl border border-gray-300 text-stone-500 hover:border-gray-400 font-semibold transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleAddPettyCash}
-                                className="flex-1 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition-colors"
+                                className="flex-1 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-stone-900 font-bold transition-colors"
                             >
                                 Log It
                             </button>
@@ -422,7 +422,7 @@ const [notification, setNotification] = useState(null)
 
             {showCloseShift && summary && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-                    <div className="bg-white border border-orange-200 shadow-xl rounded-2xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white border border-orange-200 shadow-xl rounded-2xl shadow-sm p-8 w-full max-w-md max-h-[90vh] overflow-y-auto">
                         <h3 className="text-xl font-black mb-6 text-gray-900">Close Shift</h3>
 
                         <div className="space-y-2 mb-6 text-sm">
@@ -447,7 +447,7 @@ const [notification, setNotification] = useState(null)
                             </div>
                         )}
 
-                        <label className="text-xs text-gray-500 uppercase tracking-widest mb-1 block">
+                        <label className="text-xs text-stone-500 uppercase tracking-widest mb-1 block">
                             Counted Cash (KES)
                         </label>
                         <input
@@ -467,7 +467,7 @@ const [notification, setNotification] = useState(null)
                             </p>
                         )}
 
-                        <label className="text-xs text-gray-500 uppercase tracking-widest mb-1 block">
+                        <label className="text-xs text-stone-500 uppercase tracking-widest mb-1 block">
                             Tips Declared (KES)
                         </label>
                         <input
@@ -478,7 +478,7 @@ const [notification, setNotification] = useState(null)
                             placeholder="0"
                         />
 
-                        <label className="text-xs text-gray-500 uppercase tracking-widest mb-1 block">
+                        <label className="text-xs text-stone-500 uppercase tracking-widest mb-1 block">
                             Notes (optional)
                         </label>
                         <textarea
@@ -492,14 +492,14 @@ const [notification, setNotification] = useState(null)
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowCloseShift(false)}
-                                className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-600 hover:border-gray-400 font-semibold transition-colors"
+                                className="flex-1 py-3 rounded-xl border border-gray-300 text-stone-500 hover:border-gray-400 font-semibold transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleCloseShift}
                                 disabled={shiftLoading}
-                                className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold transition-colors disabled:opacity-50"
+                                className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-stone-900 font-bold transition-colors disabled:opacity-50"
                             >
                                 {shiftLoading ? 'Closing...' : 'Confirm & Close'}
                             </button>
@@ -508,19 +508,19 @@ const [notification, setNotification] = useState(null)
                 </div>
             )}
             {notification && (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
-        <div className="bg-gray-900 border-2 border-orange-500 rounded-2xl p-8 w-full max-w-sm text-center">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+        <div className="bg-white border-2 border-orange-500 rounded-2xl shadow-sm p-8 w-full max-w-sm text-center">
             <div className="text-5xl mb-4">📦</div>
             <h3 className="text-2xl font-black text-orange-400 mb-2">Order Ready!</h3>
             <p className="text-gray-300 mb-1">
-                <span className="font-bold text-white">
+                <span className="font-bold text-stone-900">
                     {notification.order_type === 'takeaway' ? 'Take Away' : 'Delivery'} order is ready
                 </span>
             </p>
-            <p className="text-gray-400 text-sm mb-6">Coordinate with kitchen for handoff</p>
+            <p className="text-stone-400 text-sm mb-6">Coordinate with kitchen for handoff</p>
             <button
                 onClick={() => setNotification(null)}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-3 rounded-xl transition-colors"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-stone-900 font-black py-3 rounded-xl transition-colors"
             >
                 Got it ✓
             </button>
@@ -534,8 +534,8 @@ const [notification, setNotification] = useState(null)
 function SummaryRow({ label, value, bold, muted }) {
     return (
         <div className="flex items-center justify-between">
-            <span className={muted ? 'text-gray-400' : 'text-gray-500'}>{label}</span>
-            <span className={bold ? 'font-black text-gray-900' : muted ? 'text-gray-400' : 'text-gray-700'}>
+            <span className={muted ? 'text-stone-400' : 'text-stone-500'}>{label}</span>
+            <span className={bold ? 'font-black text-gray-900' : muted ? 'text-stone-400' : 'text-gray-700'}>
                 KES {Number(value).toFixed(2)}
             </span>
         </div>
