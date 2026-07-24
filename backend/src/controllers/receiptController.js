@@ -182,7 +182,7 @@ exports.sendStk = async (req, res) => {
 };
 
 exports.mpesaCallback = async (req, res) => {
-    const callback = req.body?.Body?.stkCallback;
+  const callback = req.body?.Body?.stkCallback || req.body?.stkCallback;
 
     if (!callback) {
         console.error('Malformed M-Pesa callback payload:', req.body);
