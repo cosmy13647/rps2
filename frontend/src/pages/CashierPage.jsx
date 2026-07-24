@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getUnpaidReceipts, payReceipt } from '../api/receiptApi';
+import { getUnpaidReceipts, payReceipt, sendStk } from '../api/receiptApi';
 import {
     getCurrentShift,
     openShift,
@@ -22,6 +22,12 @@ export default function CashierPage() {
     const [paymentReference, setPaymentReference] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // --- Lipa na M-Pesa (Till) STK push state ---
+    const [tillMode, setTillMode] = useState('stk'); // 'stk' | 'manual'
+    const [stkPhone, setStkPhone] = useState('');
+    const [stkSending, setStkSending] = useState(false);
+    const [stkStatus, setStkStatus] = useState(null); // null | 'pending' | 'failed'
+
     const [showPettyCash, setShowPettyCash] = useState(false);
     const [pettyAmount, setPettyAmount] = useState('');
     const [pettyReason, setPettyReason] = useState('');
@@ -31,7 +37,8 @@ export default function CashierPage() {
     const [closingCount, setClosingCount] = useState('');
     const [tipsDeclared, setTipsDeclared] = useState('');
     const [closeNotes, setCloseNotes] = useState('');
-const [notification, setNotification] = useState(null)
+    const [notification, setNotification] = useState(null)
+
     useEffect(() => {
         loadShift();
     }, []);
@@ -42,15 +49,32 @@ const [notification, setNotification] = useState(null)
 
 
     useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
+        const socket = getSocket();
+        if (!socket) return;
 
-    socket.on('order:ready', (payload) => {
-        setNotification(payload);
-    });
+        socket.on('order:ready', (payload) => {
+            setNotification(payload);
+        });
 
-    return () => socket.off('order:ready');
-}, []);
+        return () => socket.off('order:ready');
+    }, []);
+
+    // Auto-close the payment modal the moment the M-Pesa callback confirms payment,
+    // so the cashier never has to manually refresh while waiting on an STK push.
+    useEffect(() => {
+        const socket = getSocket();
+        if (!socket) return;
+
+        const handlePaid = (paidReceipt) => {
+            if (selectedReceipt && paidReceipt.id === selectedReceipt.id) {
+                closePaymentModal();
+                fetchReceipts();
+            }
+        };
+
+        socket.on('receipt:paid', handlePaid);
+        return () => socket.off('receipt:paid', handlePaid);
+    }, [selectedReceipt]);
 
     const loadShift = async () => {
         try {
@@ -85,6 +109,17 @@ const [notification, setNotification] = useState(null)
         setShiftLoading(false);
     };
 
+    const closePaymentModal = () => {
+        setSelectedReceipt(null);
+        setPaymentMethod('');
+        setAmountPaid('');
+        setPaymentReference('');
+        setTillMode('stk');
+        setStkPhone('');
+        setStkSending(false);
+        setStkStatus(null);
+    };
+
     const handlePayment = async () => {
         if (paymentMethod === 'mpesa_paybill' && !paymentReference.trim()) {
             return alert('Business/account number is required for Paybill payments');
@@ -96,16 +131,28 @@ const [notification, setNotification] = useState(null)
                 amount_paid: parseFloat(amountPaid) || selectedReceipt.subtotal,
                 payment_reference: paymentReference.trim() || null,
             });
-            setSelectedReceipt(null);
-            setPaymentMethod('');
-            setAmountPaid('');
-            setPaymentReference('');
+            closePaymentModal();
             fetchReceipts();
         } catch (err) {
             console.error('Payment failed', err);
             alert(err.response?.data?.message || 'Payment failed');
         }
         setLoading(false);
+    };
+
+    const handleSendStk = async () => {
+        if (!stkPhone.trim()) return alert("Enter the customer's phone number");
+        setStkSending(true);
+        setStkStatus(null);
+        try {
+            await sendStk(selectedReceipt.id, stkPhone.trim());
+            setStkStatus('pending');
+        } catch (err) {
+            console.error('STK push failed', err);
+            alert(err.response?.data?.message || 'Failed to send STK push');
+            setStkStatus('failed');
+        }
+        setStkSending(false);
     };
 
     const handleAddPettyCash = async () => {
@@ -343,7 +390,7 @@ const [notification, setNotification] = useState(null)
                             </div>
                         )}
 
-                        {(paymentMethod === 'mpesa_till' || paymentMethod === 'mpesa_pochi') && (
+                        {paymentMethod === 'mpesa_pochi' && (
                             <div className="mb-6">
                                 <label className="text-xs text-stone-500 uppercase tracking-widest mb-1 block">
                                     Transaction Code (optional)
@@ -358,25 +405,99 @@ const [notification, setNotification] = useState(null)
                             </div>
                         )}
 
+                        {paymentMethod === 'mpesa_till' && (
+                            <div className="mb-6">
+                                <div className="flex gap-2 mb-4">
+                                    <button
+                                        onClick={() => setTillMode('stk')}
+                                        className={`flex-1 py-2 rounded-lg text-sm font-bold border transition-colors ${
+                                            tillMode === 'stk'
+                                                ? 'bg-orange-500 border-orange-500 text-stone-900'
+                                                : 'border-gray-300 text-stone-500'
+                                        }`}
+                                    >
+                                        📲 Send STK Push
+                                    </button>
+                                    <button
+                                        onClick={() => setTillMode('manual')}
+                                        className={`flex-1 py-2 rounded-lg text-sm font-bold border transition-colors ${
+                                            tillMode === 'manual'
+                                                ? 'bg-orange-500 border-orange-500 text-stone-900'
+                                                : 'border-gray-300 text-stone-500'
+                                        }`}
+                                    >
+                                        ✍️ Customer Paid Till
+                                    </button>
+                                </div>
+
+                                {tillMode === 'stk' ? (
+                                    <>
+                                        <label className="text-xs text-stone-500 uppercase tracking-widest mb-1 block">
+                                            Customer Phone Number
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={stkPhone}
+                                            onChange={(e) => setStkPhone(e.target.value)}
+                                            disabled={stkStatus === 'pending'}
+                                            className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 mb-3 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 disabled:opacity-50"
+                                            placeholder="2547XXXXXXXX"
+                                        />
+                                        <button
+                                            onClick={handleSendStk}
+                                            disabled={stkSending || stkStatus === 'pending'}
+                                            className="w-full bg-orange-500 hover:bg-orange-600 text-stone-900 font-bold py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                                        >
+                                            {stkSending
+                                                ? 'Sending...'
+                                                : stkStatus === 'pending'
+                                                ? '⏳ Waiting for customer to enter PIN...'
+                                                : 'Send STK Push'}
+                                        </button>
+                                        {stkStatus === 'pending' && (
+                                            <p className="text-orange-600 text-sm mt-2 text-center">
+                                                This will confirm automatically once the customer pays.
+                                            </p>
+                                        )}
+                                        {stkStatus === 'failed' && (
+                                            <p className="text-red-500 text-sm mt-2 text-center">
+                                                Push failed — try again or switch to manual confirmation.
+                                            </p>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        <label className="text-xs text-stone-500 uppercase tracking-widest mb-1 block">
+                                            Transaction Code
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={paymentReference}
+                                            onChange={(e) => setPaymentReference(e.target.value)}
+                                            className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                                            placeholder="e.g. QGH7XXXXXX"
+                                        />
+                                    </>
+                                )}
+                            </div>
+                        )}
+
                         <div className="flex gap-3">
                             <button
-                                onClick={() => {
-                                    setSelectedReceipt(null);
-                                    setPaymentMethod('');
-                                    setAmountPaid('');
-                                    setPaymentReference('');
-                                }}
+                                onClick={closePaymentModal}
                                 className="flex-1 py-3 rounded-xl border border-gray-300 text-stone-500 hover:border-gray-400 font-semibold transition-colors"
                             >
                                 Cancel
                             </button>
-                            <button
-                                onClick={handlePayment}
-                                disabled={!paymentMethod || loading}
-                                className="flex-1 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-stone-900 font-bold transition-colors disabled:opacity-50"
-                            >
-                                {loading ? 'Processing...' : 'Confirm Payment'}
-                            </button>
+                            {!(paymentMethod === 'mpesa_till' && tillMode === 'stk') && (
+                                <button
+                                    onClick={handlePayment}
+                                    disabled={!paymentMethod || loading}
+                                    className="flex-1 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-stone-900 font-bold transition-colors disabled:opacity-50"
+                                >
+                                    {loading ? 'Processing...' : 'Confirm Payment'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -508,25 +629,25 @@ const [notification, setNotification] = useState(null)
                 </div>
             )}
             {notification && (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
-        <div className="bg-white border-2 border-orange-500 rounded-2xl shadow-sm p-8 w-full max-w-sm text-center">
-            <div className="text-5xl mb-4">📦</div>
-            <h3 className="text-2xl font-black text-orange-400 mb-2">Order Ready!</h3>
-            <p className="text-gray-300 mb-1">
-                <span className="font-bold text-stone-900">
-                    {notification.order_type === 'takeaway' ? 'Take Away' : 'Delivery'} order is ready
-                </span>
-            </p>
-            <p className="text-stone-400 text-sm mb-6">Coordinate with kitchen for handoff</p>
-            <button
-                onClick={() => setNotification(null)}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-stone-900 font-black py-3 rounded-xl transition-colors"
-            >
-                Got it ✓
-            </button>
-        </div>
-    </div>
-)}
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+                    <div className="bg-white border-2 border-orange-500 rounded-2xl shadow-sm p-8 w-full max-w-sm text-center">
+                        <div className="text-5xl mb-4">📦</div>
+                        <h3 className="text-2xl font-black text-orange-400 mb-2">Order Ready!</h3>
+                        <p className="text-gray-300 mb-1">
+                            <span className="font-bold text-stone-900">
+                                {notification.order_type === 'takeaway' ? 'Take Away' : 'Delivery'} order is ready
+                            </span>
+                        </p>
+                        <p className="text-stone-400 text-sm mb-6">Coordinate with kitchen for handoff</p>
+                        <button
+                            onClick={() => setNotification(null)}
+                            className="w-full bg-orange-500 hover:bg-orange-600 text-stone-900 font-black py-3 rounded-xl transition-colors"
+                        >
+                            Got it ✓
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

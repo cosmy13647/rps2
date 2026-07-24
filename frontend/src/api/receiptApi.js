@@ -10,3 +10,5 @@ export const payReceipt = (id, data) => {
 export const getReceiptsByWaiter = (name) => {
     return api.get(`/api/receipts/waiter/${name}`);
 };
+export const sendStk = (receiptId, phone) =>
+    api.post(`/receipts/${receiptId}/send-stk`, { phone });
