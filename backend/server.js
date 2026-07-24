@@ -61,6 +61,7 @@ app.use('/api/menu', menuRoutes);
 const authRoutes = require('./src/routes/authRoutes');
 app.use('/api/auth', authRoutes);
 // M-Pesa routes
+const mpesaRoutes = require('./src/routes/mpesaRoutes');
 app.use("/api/mpesa", mpesaRoutes);
 // Shift Routes
 const shiftRoutes = require('./src/routes/shiftRoutes');
