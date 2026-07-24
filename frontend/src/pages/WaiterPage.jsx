@@ -16,12 +16,11 @@ export default function WaiterPage() {
     const [activeTab, setActiveTab] = useState('order');
     const [notification, setNotification] = useState(null);
     const [orderType, setOrderType] = useState('table');
-    const [orderInputMode, setOrderInputMode] = useState('menu'); // 'menu' or 'manual'
+    const [orderInputMode, setOrderInputMode] = useState('menu');
 
-    // Menu state
     const [menu, setMenu] = useState([]);
     const [menuCategory, setMenuCategory] = useState('all');
-    const [selectedModifiers, setSelectedModifiers] = useState({}); // { itemId: modifier }
+    const [selectedModifiers, setSelectedModifiers] = useState({});
 
     useEffect(() => { fetchWaiters(); }, []);
     useEffect(() => { if (selectedWaiter) fetchReceipts(); }, [selectedWaiter]);
@@ -50,7 +49,6 @@ export default function WaiterPage() {
         } catch (err) { console.error('Failed to fetch receipts', err); }
     };
 
-    // ── Manual entry helpers ──
     const updateItem = (index, field, value) => {
         const updated = [...items];
         updated[index][field] = value;
@@ -67,21 +65,12 @@ export default function WaiterPage() {
         setItems(items.filter((_, i) => i !== index));
     };
 
-    // ── Menu helpers ──
     const categories = ['all', ...new Set(menu.map(m => m.category))];
-
     const visibleMenu = menuCategory === 'all' ? menu : menu.filter(m => m.category === menuCategory);
-
-    const cartItems = items.filter(i => i.meal_name); // items already added
-
-    const isInCart = (menuItem) => cartItems.some(i => i._menuId === menuItem.id);
 
     const addFromMenu = (menuItem) => {
         const modifier = selectedModifiers[menuItem.id];
-        const meal_name = modifier
-            ? `${menuItem.name} — ${modifier}`
-            : menuItem.name;
-
+        const meal_name = modifier ? `${menuItem.name} — ${modifier}` : menuItem.name;
         const existing = items.findIndex(i => i._menuId === menuItem.id && i.meal_name === meal_name);
 
         if (existing >= 0) {
@@ -97,7 +86,6 @@ export default function WaiterPage() {
                 unit_price: parseFloat(menuItem.price),
                 line_total: parseFloat(menuItem.price)
             };
-            // Remove empty manual placeholder if present
             const filtered = items.filter(i => i.meal_name || i.unit_price);
             setItems([...filtered, newItem]);
         }
@@ -129,13 +117,13 @@ export default function WaiterPage() {
         setLoading(true);
         try {
             const res = await createOrder({
-    table_number: orderType === 'table' ? tableNumber : null,
-    customer_ref: orderType !== 'table' ? tableNumber : null,
-    waiter_name: selectedWaiter,
-    items: validItems,
-    subtotal,
-    order_type: orderType
-});
+                table_number: orderType === 'table' ? tableNumber : null,
+                customer_ref: orderType !== 'table' ? tableNumber : null,
+                waiter_name: selectedWaiter,
+                items: validItems,
+                subtotal,
+                order_type: orderType
+            });
 
             setPrintData({
                 ...res.data.receipt,
@@ -162,16 +150,16 @@ export default function WaiterPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-950 text-white">
+        <div className="min-h-screen bg-stone-50 text-stone-900">
             {/* Header */}
-            <nav className="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+            <nav className="bg-white border-b border-stone-200 px-6 py-4 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-2">
                     <span className="text-xl">🍴</span>
-                    <span className="font-black text-lg">Resto<span className="text-orange-500">POS</span></span>
+                    <span className="font-black text-lg text-stone-900">Resto<span className="text-orange-500">POS</span></span>
                 </div>
                 <button
                     onClick={() => { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }}
-                    className="text-gray-400 hover:text-white text-sm font-semibold"
+                    className="text-stone-400 hover:text-stone-700 text-sm font-semibold transition-colors"
                 >
                     Sign Out
                 </button>
@@ -179,12 +167,12 @@ export default function WaiterPage() {
 
             <div className="max-w-4xl mx-auto px-6 py-8">
                 {/* Waiter selector */}
-                <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 mb-6">
-                    <label className="text-xs text-gray-400 uppercase tracking-widest mb-2 block">Who are you?</label>
+                <div className="bg-white border border-stone-200 rounded-2xl p-6 mb-6 shadow-sm">
+                    <label className="text-xs text-stone-400 uppercase tracking-widest mb-2 block">Who are you?</label>
                     <select
                         value={selectedWaiter}
                         onChange={(e) => setSelectedWaiter(e.target.value)}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500"
+                        className="w-full bg-stone-50 border border-stone-200 rounded-lg px-4 py-3 text-stone-900 focus:outline-none focus:border-orange-500"
                     >
                         <option value="">Select your name...</option>
                         {waiters.map((w) => (
@@ -197,13 +185,13 @@ export default function WaiterPage() {
                 <div className="flex gap-2 mb-6">
                     <button
                         onClick={() => setActiveTab('order')}
-                        className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-colors ${activeTab === 'order' ? 'bg-orange-500 text-white' : 'bg-gray-900 border border-gray-700 text-gray-400'}`}
+                        className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-colors ${activeTab === 'order' ? 'bg-orange-500 text-white' : 'bg-white border border-stone-200 text-stone-500 hover:border-orange-300'}`}
                     >
                         📋 New Order
                     </button>
                     <button
                         onClick={() => { setActiveTab('receipts'); fetchReceipts(); }}
-                        className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-colors ${activeTab === 'receipts' ? 'bg-orange-500 text-white' : 'bg-gray-900 border border-gray-700 text-gray-400'}`}
+                        className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-colors ${activeTab === 'receipts' ? 'bg-orange-500 text-white' : 'bg-white border border-stone-200 text-stone-500 hover:border-orange-300'}`}
                     >
                         🧾 My Receipts {receipts.length > 0 && `(${receipts.length})`}
                     </button>
@@ -211,18 +199,16 @@ export default function WaiterPage() {
 
                 {/* Order Form */}
                 {activeTab === 'order' && (
-                    <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6">
-                        <h2 className="text-xl font-black mb-6">New Order</h2>
+                    <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
+                        <h2 className="text-xl font-black mb-6 text-stone-900">New Order</h2>
 
                         {/* Order Type */}
                         <div className="mb-4">
-                            <label className="text-xs text-gray-400 uppercase tracking-widest mb-1 block">
-    {orderType === 'table' ? 'Table Number' : 'Customer Name / Phone'}
-</label>
+                            <label className="text-xs text-stone-400 uppercase tracking-widest mb-1 block">Order Type</label>
                             <div className="grid grid-cols-3 gap-2">
                                 {['table', 'takeaway', 'delivery'].map((type) => (
                                     <button key={type} type="button" onClick={() => setOrderType(type)}
-                                        className={`py-2 rounded-lg text-sm font-bold capitalize transition-colors ${orderType === type ? 'bg-orange-500 text-white' : 'bg-gray-800 border border-gray-700 text-gray-400'}`}
+                                        className={`py-2 rounded-lg text-sm font-bold capitalize transition-colors ${orderType === type ? 'bg-orange-500 text-white' : 'bg-stone-100 border border-stone-200 text-stone-500 hover:border-orange-300'}`}
                                     >
                                         {type === 'table' ? '🍽️' : type === 'takeaway' ? '📦' : '🛵'} {type}
                                     </button>
@@ -230,17 +216,17 @@ export default function WaiterPage() {
                             </div>
                         </div>
 
-                        {/* Table Number */}
+                        {/* Table / Customer ref */}
                         <div className="mb-6">
-                            <label className="text-xs text-gray-400 uppercase tracking-widest mb-1 block">
-                                {orderType === 'table' ? 'Table Number' : 'Reference / Customer Name'}
+                            <label className="text-xs text-stone-400 uppercase tracking-widest mb-1 block">
+                                {orderType === 'table' ? 'Table Number' : 'Customer Name / Phone'}
                             </label>
                             <input
                                 type="text"
                                 value={tableNumber}
                                 onChange={(e) => setTableNumber(e.target.value)}
-                                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500"
-                                placeholder={orderType === 'table' ? 'e.g. 5' : 'e.g. John / Order #12'}
+                                className="w-full bg-stone-50 border border-stone-200 rounded-lg px-4 py-2.5 text-stone-900 focus:outline-none focus:border-orange-500"
+                                placeholder={orderType === 'table' ? 'e.g. 5' : 'e.g. John / 0712345678'}
                             />
                         </div>
 
@@ -248,13 +234,13 @@ export default function WaiterPage() {
                         <div className="flex gap-2 mb-4">
                             <button
                                 onClick={() => setOrderInputMode('menu')}
-                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${orderInputMode === 'menu' ? 'bg-gray-700 text-white' : 'bg-gray-800 text-gray-500'}`}
+                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${orderInputMode === 'menu' ? 'bg-orange-100 text-orange-600 border border-orange-300' : 'bg-stone-100 text-stone-500 border border-stone-200'}`}
                             >
                                 🍴 From Menu
                             </button>
                             <button
                                 onClick={() => setOrderInputMode('manual')}
-                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${orderInputMode === 'manual' ? 'bg-gray-700 text-white' : 'bg-gray-800 text-gray-500'}`}
+                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${orderInputMode === 'manual' ? 'bg-orange-100 text-orange-600 border border-orange-300' : 'bg-stone-100 text-stone-500 border border-stone-200'}`}
                             >
                                 ✏️ Manual Entry
                             </button>
@@ -263,30 +249,27 @@ export default function WaiterPage() {
                         {/* Menu Mode */}
                         {orderInputMode === 'menu' && (
                             <div className="mb-4">
-                                {/* Category filter */}
                                 <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
                                     {categories.map(c => (
                                         <button key={c} onClick={() => setMenuCategory(c)}
-                                            className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${menuCategory === c ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400'}`}
+                                            className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${menuCategory === c ? 'bg-orange-500 text-white' : 'bg-stone-100 text-stone-500 border border-stone-200'}`}
                                         >
                                             {c === 'all' ? 'All' : c}
                                         </button>
                                     ))}
                                 </div>
 
-                                {/* Menu items grid */}
                                 <div className="grid grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
                                     {visibleMenu.map(item => (
-                                        <div key={item.id} className="bg-gray-800 border border-gray-700 rounded-xl p-3">
-                                            <div className="font-bold text-sm text-white mb-1">{item.name}</div>
-                                            <div className="text-orange-400 font-black text-sm mb-2">KES {Number(item.price).toLocaleString()}</div>
+                                        <div key={item.id} className="bg-stone-50 border border-stone-200 rounded-xl p-3">
+                                            <div className="font-bold text-sm text-stone-900 mb-1">{item.name}</div>
+                                            <div className="text-orange-500 font-black text-sm mb-2">KES {Number(item.price).toLocaleString()}</div>
 
-                                            {/* Modifier dropdown */}
                                             {item.modifiers && item.modifiers.length > 0 && (
                                                 <select
                                                     value={selectedModifiers[item.id] || ''}
                                                     onChange={(e) => setSelectedModifiers(prev => ({ ...prev, [item.id]: e.target.value }))}
-                                                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-2 py-1.5 text-xs text-white mb-2 focus:outline-none focus:border-orange-500"
+                                                    className="w-full bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-xs text-stone-900 mb-2 focus:outline-none focus:border-orange-500"
                                                 >
                                                     <option value="">No preference</option>
                                                     {item.modifiers.map(mod => (
@@ -310,7 +293,7 @@ export default function WaiterPage() {
                         {/* Manual Mode */}
                         {orderInputMode === 'manual' && (
                             <div className="space-y-3 mb-4">
-                                <div className="grid grid-cols-12 gap-2 text-xs text-gray-500 uppercase tracking-widest px-1">
+                                <div className="grid grid-cols-12 gap-2 text-xs text-stone-400 uppercase tracking-widest px-1">
                                     <span className="col-span-5">Item</span>
                                     <span className="col-span-2">Qty</span>
                                     <span className="col-span-3">Price</span>
@@ -320,38 +303,38 @@ export default function WaiterPage() {
                                     <div key={index} className="grid grid-cols-12 gap-2 items-center">
                                         <input type="text" placeholder="Item name" value={item.meal_name}
                                             onChange={(e) => updateItem(index, 'meal_name', e.target.value)}
-                                            className="col-span-5 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500"
+                                            className="col-span-5 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-900 focus:outline-none focus:border-orange-500"
                                         />
                                         <input type="number" value={item.quantity}
                                             onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value))}
-                                            className="col-span-2 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500"
+                                            className="col-span-2 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-900 focus:outline-none focus:border-orange-500"
                                         />
                                         <input type="number" placeholder="Price" value={item.unit_price}
                                             onChange={(e) => updateItem(index, 'unit_price', e.target.value)}
-                                            className="col-span-3 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500"
+                                            className="col-span-3 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-900 focus:outline-none focus:border-orange-500"
                                         />
-                                        <div className="col-span-1 text-sm text-gray-400 text-right">{item.line_total || 0}</div>
-                                        <button onClick={() => removeItem(index)} className="col-span-1 text-red-400 hover:text-red-300 text-lg font-bold text-center">×</button>
+                                        <div className="col-span-1 text-sm text-stone-400 text-right">{item.line_total || 0}</div>
+                                        <button onClick={() => removeItem(index)} className="col-span-1 text-red-400 hover:text-red-600 text-lg font-bold text-center">×</button>
                                     </div>
                                 ))}
-                                <button onClick={addItem} className="text-orange-500 hover:text-orange-400 text-sm font-semibold">+ Add Item</button>
+                                <button onClick={addItem} className="text-orange-500 hover:text-orange-600 text-sm font-semibold">+ Add Item</button>
                             </div>
                         )}
 
-                        {/* Cart summary — shows for both modes */}
+                        {/* Cart summary */}
                         {items.some(i => i.meal_name) && (
-                            <div className="border border-gray-700 rounded-xl p-4 mb-4 mt-2">
-                                <h3 className="text-xs text-gray-400 uppercase tracking-widest mb-3">Order Summary</h3>
+                            <div className="border border-stone-200 rounded-xl p-4 mb-4 mt-2 bg-stone-50">
+                                <h3 className="text-xs text-stone-400 uppercase tracking-widest mb-3">Order Summary</h3>
                                 <div className="space-y-2">
                                     {items.filter(i => i.meal_name).map((item, index) => (
                                         <div key={index} className="flex items-center justify-between text-sm">
-                                            <span className="text-white flex-1">{item.meal_name}</span>
+                                            <span className="text-stone-900 flex-1">{item.meal_name}</span>
                                             <div className="flex items-center gap-2 ml-2">
-                                                <button onClick={() => changeCartQty(index, -1)} className="w-6 h-6 rounded-full bg-gray-700 text-white text-xs font-bold">−</button>
-                                                <span className="text-white font-bold w-4 text-center">{item.quantity}</span>
-                                                <button onClick={() => changeCartQty(index, 1)} className="w-6 h-6 rounded-full bg-gray-700 text-white text-xs font-bold">+</button>
-                                                <span className="text-gray-400 w-16 text-right">KES {item.line_total}</span>
-                                                <button onClick={() => removeFromCart(index)} className="text-red-400 hover:text-red-300 text-sm font-bold ml-1">×</button>
+                                                <button onClick={() => changeCartQty(index, -1)} className="w-6 h-6 rounded-full bg-stone-200 text-stone-700 text-xs font-bold">−</button>
+                                                <span className="text-stone-900 font-bold w-4 text-center">{item.quantity}</span>
+                                                <button onClick={() => changeCartQty(index, 1)} className="w-6 h-6 rounded-full bg-stone-200 text-stone-700 text-xs font-bold">+</button>
+                                                <span className="text-stone-400 w-16 text-right">KES {item.line_total}</span>
+                                                <button onClick={() => removeFromCart(index)} className="text-red-400 hover:text-red-600 text-sm font-bold ml-1">×</button>
                                             </div>
                                         </div>
                                     ))}
@@ -360,8 +343,8 @@ export default function WaiterPage() {
                         )}
 
                         {/* Subtotal */}
-                        <div className="border-t border-gray-700 pt-4 flex items-center justify-between mb-6">
-                            <span className="text-gray-400">Subtotal</span>
+                        <div className="border-t border-stone-200 pt-4 flex items-center justify-between mb-6">
+                            <span className="text-stone-500">Subtotal</span>
                             <span className="text-xl font-black text-orange-500">KES {subtotal.toFixed(2)}</span>
                         </div>
 
@@ -377,27 +360,27 @@ export default function WaiterPage() {
 
                 {/* Receipts Tab */}
                 {activeTab === 'receipts' && (
-                    <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6">
+                    <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-black">My Receipts</h2>
-                            <button onClick={fetchReceipts} className="text-gray-400 hover:text-white text-sm">↻ Refresh</button>
+                            <h2 className="text-xl font-black text-stone-900">My Receipts</h2>
+                            <button onClick={fetchReceipts} className="text-stone-400 hover:text-stone-700 text-sm">↻ Refresh</button>
                         </div>
 
                         {!selectedWaiter ? (
-                            <div className="text-center text-gray-600 py-12">Select your name first</div>
+                            <div className="text-center text-stone-400 py-12">Select your name first</div>
                         ) : receipts.length === 0 ? (
-                            <div className="text-center text-gray-600 py-12">No unpaid receipts</div>
+                            <div className="text-center text-stone-400 py-12">No unpaid receipts</div>
                         ) : (
                             <div className="space-y-3">
                                 {receipts.map((r) => (
-                                    <div key={r.id} className="bg-gray-800 border border-gray-700 rounded-xl p-4 flex items-center justify-between">
+                                    <div key={r.id} className="bg-stone-50 border border-stone-200 rounded-xl p-4 flex items-center justify-between">
                                         <div>
-                                            <span className="font-bold text-orange-400">{r.receipt_number}</span>
-                                            <span className="text-gray-500 text-sm ml-2">Table {r.table_number}</span>
-                                            <div className="text-xs text-gray-500 mt-1">{r.items?.length} items</div>
+                                            <span className="font-bold text-orange-500">{r.receipt_number}</span>
+                                            <span className="text-stone-400 text-sm ml-2">Table {r.table_number}</span>
+                                            <div className="text-xs text-stone-400 mt-1">{r.items?.length} items</div>
                                         </div>
                                         <div className="flex items-center gap-4">
-                                            <span className="font-black text-white">KES {r.subtotal}</span>
+                                            <span className="font-black text-stone-900">KES {r.subtotal}</span>
                                             <button onClick={() => handlePrint(r)}
                                                 className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors"
                                             >
@@ -416,14 +399,14 @@ export default function WaiterPage() {
 
             {/* Order Ready Notification */}
             {notification && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
-                    <div className="bg-gray-900 border-2 border-green-500 rounded-2xl p-8 w-full max-w-sm text-center">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+                    <div className="bg-white border-2 border-green-500 rounded-2xl p-8 w-full max-w-sm text-center shadow-xl">
                         <div className="text-5xl mb-4">🍽️</div>
-                        <h3 className="text-2xl font-black text-green-400 mb-2">Order Ready!</h3>
-                        <p className="text-gray-300 mb-1">
-                            <span className="font-bold text-white">Table {notification.table_number}</span>
+                        <h3 className="text-2xl font-black text-green-600 mb-2">Order Ready!</h3>
+                        <p className="text-stone-700 mb-1">
+                            <span className="font-bold text-stone-900">Table {notification.table_number}</span>
                         </p>
-                        <p className="text-gray-400 text-sm mb-6">{notification.waiter_name} — pick up from kitchen</p>
+                        <p className="text-stone-400 text-sm mb-6">{notification.waiter_name} — pick up from kitchen</p>
                         <button onClick={() => setNotification(null)}
                             className="w-full bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl transition-colors"
                         >
