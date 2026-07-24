@@ -183,7 +183,8 @@ exports.sendStk = async (req, res) => {
 
 exports.mpesaCallback = async (req, res) => {
   const callback = req.body?.Body?.stkCallback || req.body?.stkCallback;
-
+console.log("========== CALLBACK RECEIVED ==========");
+console.log(JSON.stringify(req.body, null, 2));
     if (!callback) {
         console.error('Malformed M-Pesa callback payload:', req.body);
         return res.json({ ResultCode: 0, ResultDesc: 'Accepted' });
@@ -203,7 +204,7 @@ exports.mpesaCallback = async (req, res) => {
         );
 
         const receipt = receiptResult.rows[0];
-
+console.log("Receipt found:", receipt);
         if (!receipt) {
             console.error('No receipt found for CheckoutRequestID:', CheckoutRequestID);
             await client.query('ROLLBACK');
@@ -244,7 +245,7 @@ exports.mpesaCallback = async (req, res) => {
              RETURNING *`,
             [amountPaid, change_given, mpesaReceiptNumber, receipt.id]
         );
-
+console.log("Receipt updated:", updatedReceipt.rows[0]);
         await client.query(
             `UPDATE orders SET status = 'completed', updated_at = NOW()
              WHERE id = $1`,
