@@ -22,7 +22,7 @@ export default function CashierPage() {
     const [amountPaid, setAmountPaid] = useState('');
     const [paymentReference, setPaymentReference] = useState('');
     const [loading, setLoading] = useState(false);
-
+const [paymentToast, setPaymentToast] = useState(null); // holds the paid receipt, or null
     // --- Lipa na M-Pesa (Till) STK push state ---
     const [tillMode, setTillMode] = useState('stk'); // 'stk' | 'manual'
     const [stkPhone, setStkPhone] = useState('');
@@ -39,7 +39,11 @@ export default function CashierPage() {
     const [tipsDeclared, setTipsDeclared] = useState('');
     const [closeNotes, setCloseNotes] = useState('');
     const [notification, setNotification] = useState(null)
-
+useEffect(() => {
+    if (!paymentToast) return;
+    const timer = setTimeout(() => setPaymentToast(null), 6000);
+    return () => clearTimeout(timer);
+}, [paymentToast]);
     useEffect(() => {
         loadShift();
     }, []);
@@ -70,12 +74,21 @@ useEffect(() => {
         const socket = getSocket();
         if (!socket) return;
 
-        const handlePaid = (paidReceipt) => {
-            if (selectedReceipt && paidReceipt.id === selectedReceipt.id) {
-                closePaymentModal();
-                fetchReceipts();
-            }
-        };
+       const handlePaid = (paidReceipt) => {
+    // 1. Clear it from the awaiting-payment list immediately — no waiting on a re-fetch.
+    setReceipts((prev) => prev.filter((r) => r.id !== paidReceipt.id));
+
+    // 2. If this receipt's modal happens to be open, close it.
+    if (selectedReceipt && paidReceipt.id === selectedReceipt.id) {
+        closePaymentModal();
+    }
+
+    // 3. Fire the success toast.
+    setPaymentToast(paidReceipt);
+
+    // 4. Reconcile with the server in the background, in case anything else changed.
+    fetchReceipts();
+};
 
         socket.on('receipt:paid', handlePaid);
         return () => socket.off('receipt:paid', handlePaid);
@@ -651,6 +664,33 @@ useEffect(() => {
                             Got it ✓
                         </button>
                     </div>
+                </div>
+            )}
+
+            {paymentToast && (
+                <div className="fixed top-6 right-6 z-50 animate-[slideIn_0.25s_ease-out]">
+                    <div className="bg-white border-2 border-green-500 rounded-2xl shadow-lg p-4 pr-3 flex items-center gap-3 min-w-[300px]">
+                        <div className="text-2xl">✅</div>
+                        <div className="flex-1">
+                            <div className="font-black text-green-600">Payment Completed</div>
+                            <div className="text-stone-500 text-sm">
+                                {paymentToast.receipt_number} · KES {Number(paymentToast.amount_paid ?? paymentToast.subtotal).toFixed(2)}
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setPaymentToast(null)}
+                            className="text-stone-400 hover:text-stone-600 text-xl leading-none px-1"
+                            aria-label="Dismiss"
+                        >
+                            ×
+                        </button>
+                    </div>
+                    <style>{`
+                        @keyframes slideIn {
+                            from { opacity: 0; transform: translateX(20px); }
+                            to { opacity: 1; transform: translateX(0); }
+                        }
+                    `}</style>
                 </div>
             )}
         </div>
