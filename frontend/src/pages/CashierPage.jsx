@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getUnpaidReceipts, payReceipt, sendStk } from '../api/receiptApi';
+import { getSocket, connectSocket } from '../api/socket';
 import {
     getCurrentShift,
     openShift,
@@ -47,7 +48,11 @@ export default function CashierPage() {
         if (shift) fetchReceipts();
     }, [shift]);
 
-
+useEffect(() => {
+    if (!getSocket()?.connected) {
+        connectSocket(user?.role);
+    }
+}, []);
     useEffect(() => {
         const socket = getSocket();
         if (!socket) return;
