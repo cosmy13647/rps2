@@ -8,7 +8,7 @@ import {
     getShiftSummary,
     closeShift,
 } from '../api/shiftApi';
-import { getSocket } from '../api/socket';
+
 export default function CashierPage() {
     const user = JSON.parse(localStorage.getItem('user'));
 
