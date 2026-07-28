@@ -266,3 +266,22 @@ console.log("Receipt updated:", updatedReceipt.rows[0]);
         client.release();
     }
 };
+exports.getRecentReceipts = async (req, res) => {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 50);
+    try {
+        const result = await pool.query(
+            `SELECT r.id, r.receipt_number, r.status, r.payment_method,
+                    r.amount_paid, r.created_at,
+                    o.table_number, o.waiter_name, o.subtotal
+             FROM receipts r
+             JOIN orders o ON r.order_id = o.id
+             ORDER BY r.created_at DESC
+             LIMIT $1`,
+            [limit]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching recent receipts:', error);
+        res.status(500).json({ message: 'Failed to fetch recent receipts' });
+    }
+};

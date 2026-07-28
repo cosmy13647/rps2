@@ -20,5 +20,5 @@ router.patch('/:id/status', protect, authorize('kitchen', 'manager', 'admin'), o
 router.post('/customer', customerOrderController.createCustomerOrder);
 router.get('/customer', customerOrderController.getCustomerOrders);
 router.patch('/customer/:id/cancel', customerOrderController.cancelCustomerOrder);
-
+router.get('/recent', protect, orderController.getRecentOrders);
 module.exports = router;

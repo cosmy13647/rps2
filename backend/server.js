@@ -65,8 +65,10 @@ app.use('/api/auth', authRoutes);
 // Shift Routes
 const shiftRoutes = require('./src/routes/shiftRoutes');
 app.use('/api/shifts', shiftRoutes);
-const PORT = process.env.PORT || 5000;
 
+const dashboardRoutes = require('./src/routes/dashboardRoutes');
+app.use('/api/dashboard', dashboardRoutes);
+const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

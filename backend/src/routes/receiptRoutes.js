@@ -25,5 +25,5 @@ router.post('/:id/send-stk', protect, authorize('admin', 'manager', 'cashier'), 
  * @access  Public — Safaricom calls this directly, no user session exists
  */
 router.post('/mpesa/callback', receiptController.mpesaCallback);
-
+router.get('/recent', protect, authorize('admin', 'manager'), receiptController.getRecentReceipts);
 module.exports = router;

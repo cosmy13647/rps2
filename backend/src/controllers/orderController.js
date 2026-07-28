@@ -240,3 +240,20 @@ exports.cancelCustomerOrder = async (req, res) => {
         res.status(500).json({ message: 'Failed to cancel order' });
     }
 };
+// GET /api/orders/recent?limit=10
+exports.getRecentOrders = async (req, res) => {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 50);
+    try {
+        const result = await pool.query(
+            `SELECT id, table_number, waiter_name, status, order_type, created_at
+             FROM orders
+             ORDER BY created_at DESC
+             LIMIT $1`,
+            [limit]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching recent orders:', error);
+        res.status(500).json({ message: 'Failed to fetch recent orders' });
+    }
+};
